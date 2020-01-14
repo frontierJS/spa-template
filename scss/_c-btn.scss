@@ -1,0 +1,46 @@
+/* ==========================================================================
+  c-btn
+   ========================================================================== */
+
+button, .c-btn {
+  white-space: nowrap;
+  display: inline-block;
+  
+  color: $g-primary-color-light;
+  @media (prefers-color-scheme: dark) {
+    color: #FFF;
+  }
+
+  text-decoration: none;
+  background: rgba(#555,1);
+  @media (prefers-color-scheme: dark) {
+    background: rgba(#FFF,0.2);
+  }
+  padding: 1rem 1.4rem;
+  font-size: 1.6rem;
+  font-weight: 800;
+  border: 1px solid rgba(#222,1);
+  &:hover,
+  &:focus {
+    background: rgba(#000,0.9);
+    @media (prefers-color-scheme: dark) {
+      background: rgba(#FFF,0.4);
+    }
+    transition: 0.17s background ease-in-out;
+  }
+  &--lg {
+    padding: 1.4rem 2.1rem;
+    font-size: 1.9rem;
+  }
+}
+
+@media (min-width: $g-bp3) {
+  .c-btn--md {
+    padding: 1.4rem 2.1rem;
+    font-size: 1.9rem;
+  }
+  .c-btn--lg {
+    padding: 1.8rem 2.8rem;
+    font-size: 2.4rem;
+  }
+}

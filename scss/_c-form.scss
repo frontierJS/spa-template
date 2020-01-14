@@ -1,0 +1,15 @@
+/* ==========================================================================
+  c-form
+   ========================================================================== */
+
+form {
+    &:invalid button {
+        border: 1px solid #eee;
+        background-color: #eee;
+        color: #ccc;
+        @include transition(all, .3s, ease-out);
+        &:hover {
+        }
+
+    }
+}

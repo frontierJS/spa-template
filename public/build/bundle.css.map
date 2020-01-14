@@ -1,0 +1,16 @@
+{
+  "version": 3,
+  "file": "bundle.css",
+  "sources": [
+    "../../_fallback.svelte",
+    "../../index.svelte",
+    "../../Field.svelte"
+  ],
+  "sourcesContent": [
+    "<script>\n    import { url } from '@sveltech/routify'\n</script>\n\n<style>\n    .c-404 {\n        text-align: center;\n        padding: 8rem 0;\n    }\n    h1 {\n        font-size: 12.8rem;\n        font-weight: 500;\n        color: #000;\n    }\n\n    @media (prefers-color-scheme: dark) {\n        h1 {\n            color: #FFF;\n        }\n    }\n    \n</style>\n\n<div class=\"c-404\">\n    <h1>404</h1>\n    <p>Page not found.</p>\n    <p><a href={$url('../')}>Go back</a></p>\n</div>\n",
+    "<script>\n    import { auth, currentUser } from 'frontier-frontend'\n</script>\n\n<svelte:head>\n    <title>Admin App</title>\n</svelte:head>\n\n<style>\n\n    h1 {\n      font-size: 9.6rem;\n      margin: 0 0 3.2rem;\n      line-height: 1;\n      font-weight: 500;\n      color: #000;\n    }\n\n    @media (prefers-color-scheme: dark) {\n        h1 {\n            color: #FFF;\n        }\n    }\n\n    .o-container-home {\n        margin: 8rem auto;\n        max-width: 128rem;\n    }\n    \n    .text {\n        position: relative;\n        z-index: 2;\n    }\n\n</style>\n\n<div class=\"o-container-vertical\">\n    <div class=\"o-container-home\">\n        Logged in: {$currentUser.email}\n    </div>\n</div>\n",
+    "<script>\n    export let type = 'text'\n    export let value\n    export let name\n    export let label = name.replace('_', ' ')\n    export let placeholder = name\n    export let errors = []\n    export let help = ''\n    export let required = false\n</script>\n\n<fieldset class=\"field\">\n    <div class='control'>\n        {#if type === 'text'}\n            <input type='text' {name} bind:value {placeholder} {required}>\n        {:else if type === 'email'}\n            <input type='email' {name} bind:value {placeholder} {required}>\n        {:else if type === 'password'}\n            <input type='password' {name} bind:value {placeholder} {required}>\n        {:else if type === 'hidden'}\n            <input type='hidden' {name} bind:value={value} {placeholder}>\n        {:else}\n        <input type='text' {name} bind:value={value} {placeholder} {required}>\n        {/if}\n        {#if label != 'display-none'}\n            <label for={name}>{label}</label>\n        {/if}\n    </div>\n    {#if errors.length}\n        <p class='error'>{errors[0]}</p>\n    {:else if help}\n        <p class='help'>{help}</p>\n    {/if}\n</fieldset>\n\n<style>\n    input::placeholder, label {\n        text-transform: capitalize;\n    }\n</style>\n"
+  ],
+  "names": [],
+  "mappings": "AAKI,MAAM,cAAC,CAAC,AACJ,UAAU,CAAE,MAAM,CAClB,OAAO,CAAE,IAAI,CAAC,CAAC,AACnB,CAAC,AACD,EAAE,cAAC,CAAC,AACA,SAAS,CAAE,OAAO,CAClB,WAAW,CAAE,GAAG,CAChB,KAAK,CAAE,IAAI,AACf,CAAC,AAED,MAAM,AAAC,uBAAuB,IAAI,CAAC,AAAC,CAAC,AACjC,EAAE,cAAC,CAAC,AACA,KAAK,CAAE,IAAI,AACf,CAAC,AACL,CAAC;ACDD,MAAM,AAAC,uBAAuB,IAAI,CAAC,AAAC,CAAC,AAIrC,CAAC,AAED,iBAAiB,cAAC,CAAC,AACf,MAAM,CAAE,IAAI,CAAC,IAAI,CACjB,SAAS,CAAE,MAAM,AACrB,CAAC;ACSD,oBAAK,aAAa,CAAE,KAAK,eAAC,CAAC,AACvB,cAAc,CAAE,UAAU,AAC9B,CAAC"
+}

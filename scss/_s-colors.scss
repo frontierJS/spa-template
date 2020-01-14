@@ -1,0 +1,58 @@
+/* ==========================================================================
+  Settings: Colors
+  Only define colors here. Don't use sass color functions, stick to hex values,
+  or the color component in styleguide won't regenerate automatically anymore.
+ ========================================================================== */
+
+/* Grays
+ ========================================================================== */
+
+$color-gray-50:  #EDEFF2;
+$color-gray-100: #D6DEE3;
+$color-gray-150: #BAC7D1;
+$color-gray-200: #9CAFBD;
+$color-gray-300: #7894A7;
+$color-gray-400: #557891;
+$color-gray-500: #45647B;
+$color-gray-600: #385265;
+$color-gray-700: #2B414F;
+$color-gray-800: #1D2B35;
+$color-gray-900: #0F171D;
+$color-gray-1000: #000000;
+
+$gray-100:    #f8f9fa !default;
+$gray-200:    #e9ecef !default;
+$gray-300:    #dee2e6 !default;
+$gray-400:    #ced4da !default;
+$gray-500:    #adb5bd !default;
+$gray-600:    #868e96 !default;
+$gray-700:    #495057 !default;
+$gray-800:    #343a40 !default;
+$gray-900:    #212529 !default;
+ /* Key colors
+  ========================================================================== */
+
+$color-blue: #30C2FF;
+
+$white:       #fff;
+$dark:        #224b5a;
+$black:       #111;
+$light-black: #222;
+$dark-gray:   #444;
+$medium-gray: #5d5d5d;
+$white:       #fff;
+
+$dark-blue:   #00549e;
+$blue:        #3490dc;
+$light-blue:  #3980ec;
+$indigo:      #6574cd;
+$purple:      #9561e2;
+$pink:        #f66d9b;
+$red:         #e3342f;
+$orange:      #f6993f;
+$yellow:      #ffed4a;
+$green:       #38c172;
+$light-green: #a3cc3e;
+$dark-green:  #94b93a;
+$teal:        #4dc0b5;
+$cyan:        #6cb2eb;

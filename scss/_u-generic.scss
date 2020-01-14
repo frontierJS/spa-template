@@ -1,0 +1,70 @@
+/* ==========================================================================
+  Utility: generic
+  ---
+  Set of generic helping classes
+   ========================================================================== */
+
+.u-maximize-height {
+  height: 100% !important;
+}
+
+.u-maximize-width {
+  width: 100% !important;
+}
+
+.u-float-right {
+  float: right !important;
+}
+
+.u-center-m {
+  margin: 0 auto !important;
+}
+
+.u-nowrap {
+  white-space: nowrap !important;
+}
+
+.u-position-relative {
+  position: relative !important;
+}
+
+.u-position-absolute {
+  position: absolute !important;
+}
+
+.u-ta-center {
+  text-align: center !important;
+}
+
+.u-hidden {
+  display: none !important;
+}
+
+.u-opacity-50 {
+  opacity: 0.5;
+}
+
+.u-scroll {
+  overflow: auto !important;
+  -webkit-overflow-scrolling: touch;
+}
+
+.u-overflow-hidden,
+.u-kill-scroll {
+  overflow: hidden !important;
+}
+
+.u-m0 {
+  margin: 0 !important;
+}
+
+.u-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0,0,0,0);
+  border: 0;
+}
