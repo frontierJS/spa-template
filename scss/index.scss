@@ -1,69 +1,32 @@
 /* ==========================================================================
-  Stylesheet for Remnant
+  Stylesheet for FrontierJS
   ITCSS + BEM
    ========================================================================== */
 
 /* Settings: preprocessor variables, colors, global settings
    ========================================================================== */
 
-@import "_s-colors";
-@import "_s-semantic-colors";
-@import "_s-variables";
 
 /* Generic: CSS reset, box-sizing, global CSS tweaks
    ========================================================================== */
 
-@import "_reset";
 
 /* Elements: element selectors, CMS-generated content
    ========================================================================== */
 
-@import "_e-base";
 
 /* Objects: layout-related CSS, grid, SVG icons frame, flexbox classes
    ========================================================================== */
-
-@import "_o-container";
-@import "_o-flex";
-@import "_o-grid";
-// @import "_o-table" maybe?;
 
 
 /* Components: separately styled components (buttons, form inputs, toolbars...)
    ========================================================================== */
 
-@import "_c-brand";
-@import "_c-btn";
-@import "_c-btn-toolbar";
-@import "_c-album-cards";
-@import "_c-album-card";
-@import "_c-categories-nav";
-@import "_c-content";
-@import "_c-footer";
-@import "_c-header";
-@import "_c-intro";
-@import "_c-mobile-header";
-@import "_c-nav";
-@import "_c-nav-logo-holder";
-@import "_c-nav-mobile";
-@import "_c-nav-toggle";
-@import "_c-sticky-footer-layout";
-/* Forms */
-@import "_c-form";
-@import "_c-fieldset";
-@import "_c-input";
-/* Buttons */
+/* Forms 
+   ========== */
+
+/* Buttons
+   ========== */
 
 /* Utilities: specific helper classes, overrides
    ========================================================================== */
-
-@import "_u-generic";
-@import "_u-spacer";
-@import "_u-display";
-
-
-@media (max-width: $g-bp3) {
-  .c-two-col__image {
-    margin-bottom: 1.2rem;
-  }
-}
