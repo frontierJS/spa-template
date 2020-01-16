@@ -1,7 +1,7 @@
 <!-- src/App.svelte -->
 <script>
-  import { Router } from "@sveltech/routify";
-  import { routes } from "@sveltech/routify/tmp/routes";
+  import { Router } from "$router";
+  import { routes } from "$router/tmp/routes";
 </script>
 
 <Router {routes} />

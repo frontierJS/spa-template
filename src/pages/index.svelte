@@ -1,5 +1,5 @@
 <script>
-    import { auth, currentUser } from 'frontier-frontend'
+    import { auth, currentUser } from '@frontierjs/frontend'
 </script>
 
 <svelte:head>

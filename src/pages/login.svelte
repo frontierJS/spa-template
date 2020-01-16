@@ -1,8 +1,8 @@
 <script>
     import { onMount } from 'svelte'
-    import { auth } from 'frontier-frontend'
-    import { Field} from 'frontier-components'
-    import { goto } from '@sveltech/routify';
+    import { auth } from '$frontier'
+    import { Field} from '$frontier-c'
+    import { goto } from '$router';
 
     let form = {}
 
@@ -26,7 +26,7 @@
     function login(e) {
         e.preventDefault()
         console.log({e})
-        //TODO if (event.target.valid) //add to frontier-frontend
+        //TODO if (event.target.valid) //add to @frontierjs/frontend
         // if (e.target.form.reportValidity()) $auth.login(form, '/', $goto)
         if (e.target.form.reportValidity()) $auth.login(form, '/', $goto)
 

@@ -1,6 +1,6 @@
 <script>
-    import { auth, currentUser } from 'frontier-frontend'
-    import { isActive, url, goto } from '@sveltech/routify'
+    import { auth, currentUser } from '@frontierjs/frontend'
+    import { isActive, url, goto } from '$router'
 
    // Main nav
     

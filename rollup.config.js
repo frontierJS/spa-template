@@ -31,7 +31,10 @@ export default {
         alias({
             entries: [
                 { find: '$p', replacement: 'src/pages' },
-                { find: '$c', replacement: 'src/components' }
+                { find: '$c', replacement: 'src/components' },
+                { find: '$frontier', replacement: '@frontierjs/frontend' },
+                { find: '$frontier-c', replacement: '@frontierjs/frontend/components' },
+                { find: '$router', replacement: '@sveltech/routify' }
             ]
         }),
 		svelte({

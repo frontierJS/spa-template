@@ -1,8 +1,8 @@
 <script>
-  import { auth, currentUser } from "frontier-frontend";
+  import { auth, currentUser } from "@frontierjs/frontend";
   import Brand from "$c/Brand.svelte";
   import Nav from "$c/Nav.svelte";
-  import { isActive, url, goto } from "@sveltech/routify";
+  import { isActive, url, goto } from "$router";
 </script>
 
 {#if $currentUser}

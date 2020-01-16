@@ -1,5 +1,5 @@
 <script>
-    import { Field } from 'frontier-components'
+    import { Field } from '$frontier-c'
     let name = ''
     let lastName = 'Knight'
     let email = ''

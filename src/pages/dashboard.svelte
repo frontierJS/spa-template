@@ -1,8 +1,8 @@
 <script>
-    import { ajx } from 'frontier-frontend'
+    import { ajx } from '$frontier'
     import { onMount } from 'svelte'
     import { format, fromUnixTime } from 'date-fns'
-    import { Field } from 'frontier-components'
+    import { Field } from '$frontier-c'
 
     let user = { email: 'jordan+10@knight.works', password: '', site: ''}
     let users = []

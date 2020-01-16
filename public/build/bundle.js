@@ -10,9 +10,6 @@ var app = (function () {
             tar[k] = src[k];
         return tar;
     }
-    function is_promise(value) {
-        return value && typeof value === 'object' && typeof value.then === 'function';
-    }
     function add_location(element, file, line, column, char) {
         element.__svelte_meta = {
             loc: { file, line, column, char }
@@ -241,72 +238,6 @@ var app = (function () {
                 }
             });
             block.o(local);
-        }
-    }
-
-    function handle_promise(promise, info) {
-        const token = info.token = {};
-        function update(type, index, key, value) {
-            if (info.token !== token)
-                return;
-            info.resolved = value;
-            let child_ctx = info.ctx;
-            if (key !== undefined) {
-                child_ctx = child_ctx.slice();
-                child_ctx[key] = value;
-            }
-            const block = type && (info.current = type)(child_ctx);
-            let needs_flush = false;
-            if (info.block) {
-                if (info.blocks) {
-                    info.blocks.forEach((block, i) => {
-                        if (i !== index && block) {
-                            group_outros();
-                            transition_out(block, 1, 1, () => {
-                                info.blocks[i] = null;
-                            });
-                            check_outros();
-                        }
-                    });
-                }
-                else {
-                    info.block.d(1);
-                }
-                block.c();
-                transition_in(block, 1);
-                block.m(info.mount(), info.anchor);
-                needs_flush = true;
-            }
-            info.block = block;
-            if (info.blocks)
-                info.blocks[index] = block;
-            if (needs_flush) {
-                flush();
-            }
-        }
-        if (is_promise(promise)) {
-            const current_component = get_current_component();
-            promise.then(value => {
-                set_current_component(current_component);
-                update(info.then, 1, info.value, value);
-                set_current_component(null);
-            }, error => {
-                set_current_component(current_component);
-                update(info.catch, 2, info.error, error);
-                set_current_component(null);
-            });
-            // if we previously had a then/catch block, destroy it
-            if (info.current !== info.pending) {
-                update(info.pending, 0);
-                return true;
-            }
-        }
-        else {
-            if (info.current !== info.then) {
-                update(info.then, 1, info.value, promise);
-                return true;
-            }
-            info.resolved = promise;
         }
     }
 
@@ -712,126 +643,152 @@ var app = (function () {
         });
     }
 
-    const route = writable({});
-
-    const params = derived(route, route => route.params);
-
+    /** HELPERS */
     const url = {
-        subscribe(listener) {
-            return derived(getContext('routify'),
-                context => context.url
-            ).subscribe(listener)
-        }
+      subscribe(listener) {
+        return derived(getContext('routify'), context => context.url).subscribe(
+          listener
+        )
+      },
     };
 
     const goto = {
-        subscribe(listener) {
-            return derived(getContext('routify'),
-                context => context.goto
-            ).subscribe(listener)
-        }
+      subscribe(listener) {
+        return derived(getContext('routify'), context => context.goto).subscribe(
+          listener
+        )
+      },
     };
 
     const isActive = {
-        subscribe(listener) {
-            return derived(getContext('routify'),
-                context => context.isActive
-            ).subscribe(listener)
-        }
+      subscribe(listener) {
+        return derived(
+          getContext('routify'),
+          context => context.isActive
+        ).subscribe(listener)
+      },
     };
 
     function _isActive(context, route) {
-        const url = _url(context, route);
-        return function (path, keepIndex = true) {
-            path = url(path, null, keepIndex);
-            const currentPath = url(route.url, null, keepIndex);
-            return currentPath.includes(path)
-        }
+      const url = _url(context, route);
+      return function(path, keepIndex = true) {
+        path = url(path, null, keepIndex);
+        const currentPath = url(route.path, null, keepIndex);
+        const re = new RegExp('^' + path);
+        return currentPath.match(re)
+      }
     }
 
     function _goto(context, route) {
-        const url = _url(context, route);
-        return function goto(path, params, _static, shallow) {
-            const href = url(path, params);
-            if (!_static)
-                history.pushState({}, null, href);
-            else
-                getContext('routifyupdatepage')(href, shallow);
-        }
+      const url = _url(context, route);
+      return function goto(path, params, _static, shallow) {
+        const href = url(path, params);
+        if (!_static) history.pushState({}, null, href);
+        else getContext('routifyupdatepage')(href, shallow);
+      }
     }
 
     function _url(context, route) {
-        return function url(path, params, preserveIndex) {
-            path = path || ('./');
+      return function url(path, params, preserveIndex) {
+        path = path || './';
 
-            if (!preserveIndex)
-                path = path.replace(/index$/, '');
+        if (!preserveIndex) path = path.replace(/index$/, '');
 
-            if (path.match(/^\.\.?\//)) {
-                //RELATIVE PATH
-                // get component's dir
-                // let dir = context.path.replace(/[^\/]+$/, '')
-                let dir = context.path;
-                // traverse through parents if needed
-                const traverse = path.match(/\.\.\//g);
-                if (traverse)
-                    for (let i = 1; i <= traverse.length; i++) {
-                        dir = dir.replace(/\/[^\/]+\/?$/, '');
-                    }
+        if (path.match(/^\.\.?\//)) {
+          //RELATIVE PATH
+          // get component's dir
+          // let dir = context.path.replace(/[^\/]+$/, '')
+          let dir = context.path;
+          // traverse through parents if needed
+          const traverse = path.match(/\.\.\//g) || [];
+          traverse.forEach(() => {
+            dir = dir.replace(/\/[^\/]+\/?$/, '');
+          });
 
-                // strip leading periods and slashes
-                path = path.replace(/^[\.\/]+/, '');
-                dir = dir.replace(/\/$/, '') + '/';
-                path = dir + path;
-            } else if (path.match(/^\//)) ;
+          // strip leading periods and slashes
+          path = path.replace(/^[\.\/]+/, '');
+          dir = dir.replace(/\/$/, '') + '/';
+          path = dir + path;
+        } else if (path.match(/^\//)) ;
 
-            params = Object.assign({}, route.params, context.params, params);
-            for (const [key, value] of Object.entries(params)) {
-                path = path.replace(`:${key}`, value);
-            }
-            return path
+        params = Object.assign({}, route.params, context.params, params);
+        for (const [key, value] of Object.entries(params)) {
+          path = path.replace(`:${key}`, value);
         }
+        return path
+      }
     }
+
+    const route = writable({});
+
+    var config = {"pages":"/home/j/code/Z/FRONTIER/spa-template/src/pages","ignore":[],"unknownPropWarnings":true,"dynamicImports":false,"singleBuild":false,"outputDir":"/home/j/code/Z/FRONTIER/spa-template/node_modules/@sveltech/routify/tmp","watch":true,"scroll":false};
+
+    const MATCH_PARAM = RegExp(/\:[^\/\()]+/g);
+
+    function handleScroll(element) {
+      scrollAncestorsToTop(element);
+      handleHash();
+    }
+
+
+    function handleHash() {
+      const { scroll } = config;
+      const options = ['auto', 'smooth', 'smooth'];
+      const { hash } = window.location;
+      if (scroll && hash) {
+        const behavior = options.includes(scroll) && scroll || 'auto';    
+        const el = document.querySelector(hash);
+        if (hash && el) el.scrollIntoView({ behavior });
+      }
+    }
+
+
+    function scrollAncestorsToTop(element) {
+      if (element && element.dataset.routify !== 'scroll-lock') {
+        element.scrollTo(0, 0);
+        scrollAncestorsToTop(element.parentElement);
+      }
+    }
+
+    const pathToRegex = (str, recursive) => {
+      const suffix = recursive ? '' : '/?$'; //fallbacks should match recursively
+      str = str.replace(/\/_fallback?$/, '(/|$)');
+      str = str.replace(/\/index$/, '(/index)?'); //index files should be matched even if not present in url
+      str = '^' + str.replace(MATCH_PARAM, '([^/]+)') + suffix;
+      return str
+    };
+
+    const pathToParams = string => {
+      const matches = string.match(MATCH_PARAM);
+      if (matches) return matches.map(str => str.substr(1, str.length - 2))
+    };
+
+    const pathToRank = ({ path, isFallback }) => {
+      return !isFallback
+        ? 'Z'
+        : path
+            .split('/')
+            .map(str => (str.match(/\[|\]/) ? 'A' : 'B'))
+            .join('')
+    };
 
     /* node_modules/@sveltech/routify/runtime/Route.svelte generated by Svelte v3.16.7 */
     const file = "node_modules/@sveltech/routify/runtime/Route.svelte";
 
-    // (1:0) <script>    import { setContext }
-    function create_catch_block(ctx) {
-    	const block = {
-    		c: noop,
-    		m: noop,
-    		p: noop,
-    		i: noop,
-    		o: noop,
-    		d: noop
-    	};
-
-    	dispatch_dev("SvelteRegisterBlock", {
-    		block,
-    		id: create_catch_block.name,
-    		type: "catch",
-    		source: "(1:0) <script>    import { setContext }",
-    		ctx
-    	});
-
-    	return block;
-    }
-
-    // (44:42)     <svelte:component      this={component}
-    function create_then_block(ctx) {
+    // (44:0) {#if component}
+    function create_if_block_1(ctx) {
     	let switch_instance_anchor;
     	let current;
-    	const switch_instance_spread_levels = [{ scoped: /*scoped*/ ctx[0] }, /*layout*/ ctx[2].params];
-    	var switch_value = /*component*/ ctx[12];
+    	const switch_instance_spread_levels = [{ scoped: /*scoped*/ ctx[0] }, /*layout*/ ctx[3].param];
+    	var switch_value = /*component*/ ctx[2];
 
     	function switch_props(ctx) {
     		let switch_instance_props = {
     			$$slots: {
     				default: [
     					create_default_slot,
-    					({ scoped: scopeToChild }) => ({ 5: scopeToChild }),
-    					({ scoped: scopeToChild }) => scopeToChild ? 32 : 0
+    					({ scoped: scopeToChild }) => ({ 6: scopeToChild }),
+    					({ scoped: scopeToChild }) => scopeToChild ? 64 : 0
     				]
     			},
     			$$scope: { ctx }
@@ -865,18 +822,18 @@ var app = (function () {
     			current = true;
     		},
     		p: function update(ctx, dirty) {
-    			const switch_instance_changes = (dirty & /*scoped, layout*/ 5)
+    			const switch_instance_changes = (dirty & /*scoped, layout*/ 9)
     			? get_spread_update(switch_instance_spread_levels, [
     					dirty & /*scoped*/ 1 && ({ scoped: /*scoped*/ ctx[0] }),
-    					dirty & /*layout*/ 4 && get_spread_object(/*layout*/ ctx[2].params)
+    					dirty & /*layout*/ 8 && get_spread_object(/*layout*/ ctx[3].param)
     				])
     			: {};
 
-    			if (dirty & /*$$scope, remainingLayouts, scoped, scopeToChild*/ 8233) {
+    			if (dirty & /*$$scope, remainingLayouts, scoped, scopeToChild*/ 8273) {
     				switch_instance_changes.$$scope = { dirty, ctx };
     			}
 
-    			if (switch_value !== (switch_value = /*component*/ ctx[12])) {
+    			if (switch_value !== (switch_value = /*component*/ ctx[2])) {
     				if (switch_instance) {
     					group_outros();
     					const old_component = switch_instance;
@@ -917,9 +874,9 @@ var app = (function () {
 
     	dispatch_dev("SvelteRegisterBlock", {
     		block,
-    		id: create_then_block.name,
-    		type: "then",
-    		source: "(44:42)     <svelte:component      this={component}",
+    		id: create_if_block_1.name,
+    		type: "if",
+    		source: "(44:0) {#if component}",
     		ctx
     	});
 
@@ -927,15 +884,15 @@ var app = (function () {
     }
 
     // (50:4) {#if remainingLayouts.length}
-    function create_if_block_1(ctx) {
+    function create_if_block_2(ctx) {
     	let current;
 
     	const route_1 = new Route({
     			props: {
-    				layouts: /*remainingLayouts*/ ctx[3],
+    				layouts: /*remainingLayouts*/ ctx[4],
     				scoped: {
     					.../*scoped*/ ctx[0],
-    					.../*scopeToChild*/ ctx[5]
+    					.../*scopeToChild*/ ctx[6]
     				}
     			},
     			$$inline: true
@@ -951,11 +908,11 @@ var app = (function () {
     		},
     		p: function update(ctx, dirty) {
     			const route_1_changes = {};
-    			if (dirty & /*remainingLayouts*/ 8) route_1_changes.layouts = /*remainingLayouts*/ ctx[3];
+    			if (dirty & /*remainingLayouts*/ 16) route_1_changes.layouts = /*remainingLayouts*/ ctx[4];
 
-    			if (dirty & /*scoped, scopeToChild*/ 33) route_1_changes.scoped = {
+    			if (dirty & /*scoped, scopeToChild*/ 65) route_1_changes.scoped = {
     				.../*scoped*/ ctx[0],
-    				.../*scopeToChild*/ ctx[5]
+    				.../*scopeToChild*/ ctx[6]
     			};
 
     			route_1.$set(route_1_changes);
@@ -976,7 +933,7 @@ var app = (function () {
 
     	dispatch_dev("SvelteRegisterBlock", {
     		block,
-    		id: create_if_block_1.name,
+    		id: create_if_block_2.name,
     		type: "if",
     		source: "(50:4) {#if remainingLayouts.length}",
     		ctx
@@ -985,11 +942,11 @@ var app = (function () {
     	return block;
     }
 
-    // (45:2) <svelte:component      this={component}      let:scoped={scopeToChild}      {scoped}      {...layout.params}>
+    // (45:2) <svelte:component      this={component}      let:scoped={scopeToChild}      {scoped}      {...layout.param}>
     function create_default_slot(ctx) {
     	let if_block_anchor;
     	let current;
-    	let if_block = /*remainingLayouts*/ ctx[3].length && create_if_block_1(ctx);
+    	let if_block = /*remainingLayouts*/ ctx[4].length && create_if_block_2(ctx);
 
     	const block = {
     		c: function create() {
@@ -1002,12 +959,12 @@ var app = (function () {
     			current = true;
     		},
     		p: function update(ctx, dirty) {
-    			if (/*remainingLayouts*/ ctx[3].length) {
+    			if (/*remainingLayouts*/ ctx[4].length) {
     				if (if_block) {
     					if_block.p(ctx, dirty);
     					transition_in(if_block, 1);
     				} else {
-    					if_block = create_if_block_1(ctx);
+    					if_block = create_if_block_2(ctx);
     					if_block.c();
     					transition_in(if_block, 1);
     					if_block.m(if_block_anchor.parentNode, if_block_anchor);
@@ -1041,29 +998,7 @@ var app = (function () {
     		block,
     		id: create_default_slot.name,
     		type: "slot",
-    		source: "(45:2) <svelte:component      this={component}      let:scoped={scopeToChild}      {scoped}      {...layout.params}>",
-    		ctx
-    	});
-
-    	return block;
-    }
-
-    // (1:0) <script>    import { setContext }
-    function create_pending_block(ctx) {
-    	const block = {
-    		c: noop,
-    		m: noop,
-    		p: noop,
-    		i: noop,
-    		o: noop,
-    		d: noop
-    	};
-
-    	dispatch_dev("SvelteRegisterBlock", {
-    		block,
-    		id: create_pending_block.name,
-    		type: "pending",
-    		source: "(1:0) <script>    import { setContext }",
+    		source: "(45:2) <svelte:component      this={component}      let:scoped={scopeToChild}      {scoped}      {...layout.param}>",
     		ctx
     	});
 
@@ -1079,8 +1014,8 @@ var app = (function () {
     	const block = {
     		c: function create() {
     			span = element("span");
-    			add_location(span, file, 59, 2, 1473);
-    			dispose = action_destroyer(setParent_action = /*setParent*/ ctx[4].call(null, span));
+    			add_location(span, file, 59, 2, 1553);
+    			dispose = action_destroyer(setParent_action = /*setParent*/ ctx[5].call(null, span));
     		},
     		m: function mount(target, anchor) {
     			insert_dev(target, span, anchor);
@@ -1103,85 +1038,75 @@ var app = (function () {
     }
 
     function create_fragment(ctx) {
-    	let promise;
     	let t;
-    	let if_block_anchor;
+    	let if_block1_anchor;
     	let current;
-
-    	let info = {
-    		ctx,
-    		current: null,
-    		token: null,
-    		pending: create_pending_block,
-    		then: create_then_block,
-    		catch: create_catch_block,
-    		value: 12,
-    		blocks: [,,,]
-    	};
-
-    	handle_promise(promise = /*layout*/ ctx[2].component(), info);
-    	let if_block = !/*parentElement*/ ctx[1] && create_if_block(ctx);
+    	let if_block0 = /*component*/ ctx[2] && create_if_block_1(ctx);
+    	let if_block1 = !/*parentElement*/ ctx[1] && create_if_block(ctx);
 
     	const block = {
     		c: function create() {
-    			info.block.c();
+    			if (if_block0) if_block0.c();
     			t = space();
-    			if (if_block) if_block.c();
-    			if_block_anchor = empty();
+    			if (if_block1) if_block1.c();
+    			if_block1_anchor = empty();
     		},
     		l: function claim(nodes) {
     			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
     		},
     		m: function mount(target, anchor) {
-    			info.block.m(target, info.anchor = anchor);
-    			info.mount = () => t.parentNode;
-    			info.anchor = t;
+    			if (if_block0) if_block0.m(target, anchor);
     			insert_dev(target, t, anchor);
-    			if (if_block) if_block.m(target, anchor);
-    			insert_dev(target, if_block_anchor, anchor);
+    			if (if_block1) if_block1.m(target, anchor);
+    			insert_dev(target, if_block1_anchor, anchor);
     			current = true;
     		},
-    		p: function update(new_ctx, [dirty]) {
-    			ctx = new_ctx;
-    			info.ctx = ctx;
+    		p: function update(ctx, [dirty]) {
+    			if (/*component*/ ctx[2]) {
+    				if (if_block0) {
+    					if_block0.p(ctx, dirty);
+    					transition_in(if_block0, 1);
+    				} else {
+    					if_block0 = create_if_block_1(ctx);
+    					if_block0.c();
+    					transition_in(if_block0, 1);
+    					if_block0.m(t.parentNode, t);
+    				}
+    			} else if (if_block0) {
+    				group_outros();
 
-    			if (dirty & /*layout*/ 4 && promise !== (promise = /*layout*/ ctx[2].component()) && handle_promise(promise, info)) ; else {
-    				const child_ctx = ctx.slice();
-    				child_ctx[12] = info.resolved;
-    				info.block.p(child_ctx, dirty);
+    				transition_out(if_block0, 1, 1, () => {
+    					if_block0 = null;
+    				});
+
+    				check_outros();
     			}
 
     			if (!/*parentElement*/ ctx[1]) {
-    				if (!if_block) {
-    					if_block = create_if_block(ctx);
-    					if_block.c();
-    					if_block.m(if_block_anchor.parentNode, if_block_anchor);
+    				if (!if_block1) {
+    					if_block1 = create_if_block(ctx);
+    					if_block1.c();
+    					if_block1.m(if_block1_anchor.parentNode, if_block1_anchor);
     				}
-    			} else if (if_block) {
-    				if_block.d(1);
-    				if_block = null;
+    			} else if (if_block1) {
+    				if_block1.d(1);
+    				if_block1 = null;
     			}
     		},
     		i: function intro(local) {
     			if (current) return;
-    			transition_in(info.block);
+    			transition_in(if_block0);
     			current = true;
     		},
     		o: function outro(local) {
-    			for (let i = 0; i < 3; i += 1) {
-    				const block = info.blocks[i];
-    				transition_out(block);
-    			}
-
+    			transition_out(if_block0);
     			current = false;
     		},
     		d: function destroy(detaching) {
-    			info.block.d(detaching);
-    			info.token = null;
-    			info = null;
+    			if (if_block0) if_block0.d(detaching);
     			if (detaching) detach_dev(t);
-    			if (if_block) if_block.d(detaching);
-    			if (detaching) detach_dev(if_block_anchor);
+    			if (if_block1) if_block1.d(detaching);
+    			if (detaching) detach_dev(if_block1_anchor);
     		}
     	};
 
@@ -1201,31 +1126,27 @@ var app = (function () {
     	validate_store(route, "route");
     	component_subscribe($$self, route, $$value => $$invalidate(8, $route = $$value));
     	let { layouts = [] } = $$props, { scoped = {} } = $$props;
-    	let scopeToChild;
-    	let _context;
-    	let self;
-    	let props = {};
-    	let parentElement;
+    	let scopeToChild, props = {}, parentElement, component;
+    	const context = writable({});
+    	setContext("routify", context);
 
     	function setParent(el) {
     		$$invalidate(1, parentElement = el.parentElement);
     	}
 
     	function updateContext(layout) {
-    		const { path, params } = layout;
-    		_context = _context || writable({});
-
-    		_context.set({
+    		context.set({
     			route: $route,
-    			path,
-    			params,
+    			path: layout.path,
     			url: _url(layout, $route),
     			goto: _goto(layout, $route),
-    			isActive: _isActive(layout, $route),
-    			leftover: $route.leftover
+    			isActive: _isActive(layout, $route)
     		});
+    	}
 
-    		setContext("routify", _context);
+    	async function setComponent(layout) {
+    		$$invalidate(2, component = await layout.component());
+    		updateContext(layout);
     	}
 
     	const writable_props = ["layouts", "scoped"];
@@ -1235,7 +1156,7 @@ var app = (function () {
     	});
 
     	$$self.$set = $$props => {
-    		if ("layouts" in $$props) $$invalidate(6, layouts = $$props.layouts);
+    		if ("layouts" in $$props) $$invalidate(7, layouts = $$props.layouts);
     		if ("scoped" in $$props) $$invalidate(0, scoped = $$props.scoped);
     	};
 
@@ -1244,10 +1165,9 @@ var app = (function () {
     			layouts,
     			scoped,
     			scopeToChild,
-    			_context,
-    			self,
     			props,
     			parentElement,
+    			component,
     			layout,
     			remainingLayouts,
     			$route
@@ -1255,15 +1175,14 @@ var app = (function () {
     	};
 
     	$$self.$inject_state = $$props => {
-    		if ("layouts" in $$props) $$invalidate(6, layouts = $$props.layouts);
+    		if ("layouts" in $$props) $$invalidate(7, layouts = $$props.layouts);
     		if ("scoped" in $$props) $$invalidate(0, scoped = $$props.scoped);
-    		if ("scopeToChild" in $$props) $$invalidate(5, scopeToChild = $$props.scopeToChild);
-    		if ("_context" in $$props) _context = $$props._context;
-    		if ("self" in $$props) self = $$props.self;
+    		if ("scopeToChild" in $$props) $$invalidate(6, scopeToChild = $$props.scopeToChild);
     		if ("props" in $$props) props = $$props.props;
     		if ("parentElement" in $$props) $$invalidate(1, parentElement = $$props.parentElement);
-    		if ("layout" in $$props) $$invalidate(2, layout = $$props.layout);
-    		if ("remainingLayouts" in $$props) $$invalidate(3, remainingLayouts = $$props.remainingLayouts);
+    		if ("component" in $$props) $$invalidate(2, component = $$props.component);
+    		if ("layout" in $$props) $$invalidate(3, layout = $$props.layout);
+    		if ("remainingLayouts" in $$props) $$invalidate(4, remainingLayouts = $$props.remainingLayouts);
     		if ("$route" in $$props) route.set($route = $$props.$route);
     	};
 
@@ -1271,22 +1190,23 @@ var app = (function () {
     	let remainingLayouts;
 
     	$$self.$$.update = () => {
-    		if ($$self.$$.dirty & /*layouts*/ 64) {
-    			 $$invalidate(2, [layout, ...remainingLayouts] = layouts, layout, ($$invalidate(3, remainingLayouts), $$invalidate(6, layouts)));
+    		if ($$self.$$.dirty & /*layouts*/ 128) {
+    			 $$invalidate(3, [layout, ...remainingLayouts] = layouts, layout, ($$invalidate(4, remainingLayouts), $$invalidate(7, layouts)));
     		}
 
-    		if ($$self.$$.dirty & /*layout*/ 4) {
-    			 updateContext(layout);
+    		if ($$self.$$.dirty & /*layout*/ 8) {
+    			 setComponent(layout);
     		}
 
-    		if ($$self.$$.dirty & /*layout, parentElement*/ 6) {
-    			 layout && parentElement && parentElement.scrollTo(0, 0);
+    		if ($$self.$$.dirty & /*remainingLayouts, parentElement*/ 18) {
+    			 if (!remainingLayouts.length) handleScroll(parentElement);
     		}
     	};
 
     	return [
     		scoped,
     		parentElement,
+    		component,
     		layout,
     		remainingLayouts,
     		setParent,
@@ -1298,7 +1218,7 @@ var app = (function () {
     class Route extends SvelteComponentDev {
     	constructor(options) {
     		super(options);
-    		init(this, options, instance, create_fragment, safe_not_equal, { layouts: 6, scoped: 0 });
+    		init(this, options, instance, create_fragment, safe_not_equal, { layouts: 7, scoped: 0 });
 
     		dispatch_dev("SvelteRegisterComponent", {
     			component: this,
@@ -1325,95 +1245,113 @@ var app = (function () {
     	}
     }
 
-    function init$1 (routes, cb) {
-    ['pushState', 'replaceState'].forEach(eventName => {
-          const fn = history[eventName];
-          history[eventName] = function (state, title, url) {
-            const event = Object.assign(
-              new Event(eventName.toLowerCase(), { state, title, url })
-            );
-            Object.assign(event, { state, title, url });
-
-            fn.apply(this, [state, title, url]);
-            return dispatchEvent(event)
-          };
-        });
-
+    function init$1(routes, callback) {
       function updatePage(url, shallow) {
+
         const currentUrl = window.location.pathname;
         url = url || currentUrl;
 
-        let route$1 = urlToRoute(url, routes);
-        let currentRoute = shallow && urlToRoute(currentUrl, routes);
-        let contextRoute = currentRoute || route$1;
+        const route$1 = urlToRoute(url, routes);
+        const currentRoute = shallow && urlToRoute(currentUrl, routes);
+        const contextRoute = currentRoute || route$1;
         const layouts = [...contextRoute.layouts, route$1];
 
         //set the route in the store
         route.set(route$1);
 
         //run callback in Router.svelte
-        cb({ layouts, route: route$1 });
+        callback(layouts);
       }
 
-      function click(event) {
-        const el = event.target.closest('a');
-        const href = el && el.getAttribute('href');
+      createEventListeners(updatePage);
 
-        if (
-          event.ctrlKey ||
-          event.metaKey ||
-          event.altKey ||
-          event.shiftKey ||
-          event.button ||
-          event.defaultPrevented
-        )
-          return
-        if (!href || el.target || el.host !== location.host) return
-
-        event.preventDefault();
-        history.pushState({}, '', href);
-      }
-
-      return {updatePage, click}
+      return updatePage
     }
 
+    /**
+     * svelte:window events doesn't work on refresh
+     * @param {Function} updatePage 
+     */
+    function createEventListeners(updatePage) {
+    ['pushState', 'replaceState'].forEach(eventName => {
+        const fn = history[eventName];
+        history[eventName] = function (state, title, url) {
+          const event = Object.assign(
+            new Event(eventName.toLowerCase(), { state, title, url })
+          );
+          Object.assign(event, { state, title, url });
+
+          fn.apply(this, [state, title, url]);
+          return dispatchEvent(event)
+        };
+      });
+
+      // click
+      addEventListener('click', handleClick)
+        ;['pushstate', 'popstate', 'replacestate'].forEach(e =>
+          addEventListener(e, () => updatePage())
+        );
+    }
+
+    function handleClick(event) {
+      const el = event.target.closest('a');
+      const href = el && el.getAttribute('href');
+
+      if (
+        event.ctrlKey ||
+        event.metaKey ||
+        event.altKey ||
+        event.shiftKey ||
+        event.button ||
+        event.defaultPrevented
+      )
+        return
+      if (!href || el.target || el.host !== location.host) return
+
+      event.preventDefault();
+      history.pushState({}, '', href);
+    }
 
     function urlToRoute(url, routes) {
-      const fallbacks = routes.filter(route => route.isFallback);
-      routes = routes.filter(route => !route.isFallback);
-      const urlWithIndex = url.match(/\/index\/?$/)
-        ? url
-        : (url + '/index').replace(/\/+/g, '/'); //remove duplicate slashes
-      const urlWithSlash = (url + '/').replace(/\/+/g, '/');
-
-      const route =
-        routes.filter(route => urlWithIndex.match(route.regex))[0] ||
-        routes.filter(route => url.match(route.regex))[0] ||
-        fallbacks.filter(route => urlWithSlash.match(route.regex))[0] ||
-        fallbacks.filter(route => url.match(route.regex))[0];
-
+      const route = routes.find(route => url.match(route.regex));
       if (!route)
         throw new Error(
           `Route could not be found. Make sure ${url}.svelte or ${url}/index.svelte exists. A restart may be required.`
         )
 
-      const regexUrl = route.regex.match(/\/index$/) ? urlWithIndex : url;
-
-      const params = {};
       if (route.paramKeys) {
-        regexUrl.match(route.regex).forEach((match, i) => {
-          if (i === 0) return
-          const key = route.paramKeys[i - 1];
-          params[key] = match;
+        const layouts = layoutByPos(route.layouts);
+        const fragments = url.split('/').filter(Boolean);
+        const routeProps = getRouteProps(route.path);
+
+        routeProps.forEach((prop, i) => {
+          if (prop) {
+            route.params[prop] = fragments[i];
+            if (layouts[i]) layouts[i].param = { [prop]: fragments[i] };
+            else route.param = { [prop]: fragments[i] };
+          }
         });
       }
 
-      route.params = params;
-
-      const match = url.match(route.regex + '(.+)');
-      route.leftover = (match && match[1]) || '';
+      route.leftover = url.replace(new RegExp(route.regex), '');
 
       return route
+    }
+
+    function layoutByPos(layouts) {
+      const arr = [];
+      layouts.forEach(layout => {
+        arr[layout.path.split('/').filter(Boolean).length - 1] = layout;
+      });
+      return arr
+    }
+
+    function getRouteProps(url) {
+      return url
+        .split('/')
+        .filter(Boolean)
+        .map(f => f.match(/\:(.+)/))
+        .map(f => f && f[1])
     }
 
     /* node_modules/@sveltech/routify/runtime/Router.svelte generated by Svelte v3.16.7 */
@@ -1421,38 +1359,38 @@ var app = (function () {
     function create_fragment$1(ctx) {
     	let current;
 
-    	const route_1 = new Route({
+    	const route = new Route({
     			props: { layouts: /*layouts*/ ctx[0] },
     			$$inline: true
     		});
 
     	const block = {
     		c: function create() {
-    			create_component(route_1.$$.fragment);
+    			create_component(route.$$.fragment);
     		},
     		l: function claim(nodes) {
     			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
     		},
     		m: function mount(target, anchor) {
-    			mount_component(route_1, target, anchor);
+    			mount_component(route, target, anchor);
     			current = true;
     		},
     		p: function update(ctx, [dirty]) {
-    			const route_1_changes = {};
-    			if (dirty & /*layouts*/ 1) route_1_changes.layouts = /*layouts*/ ctx[0];
-    			route_1.$set(route_1_changes);
+    			const route_changes = {};
+    			if (dirty & /*layouts*/ 1) route_changes.layouts = /*layouts*/ ctx[0];
+    			route.$set(route_changes);
     		},
     		i: function intro(local) {
     			if (current) return;
-    			transition_in(route_1.$$.fragment, local);
+    			transition_in(route.$$.fragment, local);
     			current = true;
     		},
     		o: function outro(local) {
-    			transition_out(route_1.$$.fragment, local);
+    			transition_out(route.$$.fragment, local);
     			current = false;
     		},
     		d: function destroy(detaching) {
-    			destroy_component(route_1, detaching);
+    			destroy_component(route, detaching);
     		}
     	};
 
@@ -1469,12 +1407,11 @@ var app = (function () {
 
     function instance$1($$self, $$props, $$invalidate) {
     	let { routes } = $$props;
-    	let layouts, route;
-    	const { updatePage, click } = init$1(routes, update => $$invalidate(0, { layouts, route } = update, layouts));
-    	updatePage();
+    	let layouts = [];
+    	const callback = res => $$invalidate(0, layouts = res);
+    	const updatePage = init$1(routes, callback);
     	setContext("routifyupdatepage", updatePage);
-    	["pushstate", "popstate", "replacestate"].forEach(e => addEventListener(e, () => updatePage()));
-    	addEventListener("click", click);
+    	updatePage();
     	const writable_props = ["routes"];
 
     	Object.keys($$props).forEach(key => {
@@ -1486,13 +1423,12 @@ var app = (function () {
     	};
 
     	$$self.$capture_state = () => {
-    		return { routes, layouts, route };
+    		return { routes, layouts };
     	};
 
     	$$self.$inject_state = $$props => {
     		if ("routes" in $$props) $$invalidate(1, routes = $$props.routes);
     		if ("layouts" in $$props) $$invalidate(0, layouts = $$props.layouts);
-    		if ("route" in $$props) route = $$props.route;
     	};
 
     	return [layouts, routes];
@@ -1526,6 +1462,29 @@ var app = (function () {
     		throw new Error("<Router>: Props cannot be set directly on the component instance unless compiling with 'accessors: true' or '<svelte:options accessors/>'");
     	}
     }
+
+    function buildRoutes(routes, routeKeys) {
+      return (
+        routes
+          // .map(sr => deserializeRoute(sr, routeKeys))
+          .map(decorateRoute)
+          .sort((c, p) => (c.ranking >= p.ranking ? -1 : 1))
+      )
+    }
+
+    const decorateRoute = function(route) {
+      route.paramKeys = pathToParams(route.path);
+      route.regex = pathToRegex(route.path, route.isFallback);
+      route.name = route.path.match(/[^\/]*\/[^\/]+$/)[0].replace(/[^\w\/]/g, ''); //last dir and name, then replace all but \w and /
+      route.ranking = pathToRank(route);
+      route.layouts.map(l => {
+        l.param = {};
+        return l
+      });
+      route.params = {};
+
+      return route
+    };
 
     var _env = {
         authUrl: 'https://auth.knight.works/api/v1/login',
@@ -1573,7 +1532,7 @@ var app = (function () {
         console.log('fetched');
 
         if ([401,403,500].includes(res.status)) {
-            logout(null, null, res);
+            logout();
             return false
         }
 
@@ -1689,14 +1648,12 @@ var app = (function () {
         }
     };
 
-    let logout = function(destination = '/', cb, response = null) {
-
+    let logout = function(destination = '/', cb) {
         ['access', 'refresh', 'currentUser'].map(i => localStorage.removeItem(i));
         authorization = false;
         currentUser.set(false);
         //Need ajax to kill refresh token
 
-        console.log('logging out', {response});
         return cb ? cb(destination) : document.location = destination
     };
 
@@ -1712,7 +1669,7 @@ var app = (function () {
         user,
     });
 
-    var frontierFrontend = /*#__PURE__*/Object.freeze({
+    var frontend = /*#__PURE__*/Object.freeze({
         __proto__: null,
         currentUser: currentUser,
         ajax: ajax,
@@ -1720,17 +1677,104 @@ var app = (function () {
         auth: auth
     });
 
-    let {auth: auth$1, ajx: ajx$1, currentUser: currentUser$1 } = frontierFrontend;
+    var jsonp_1 = jsonp;
+
+    /**
+     * Callback index.
+     */
+
+    var count = 0;
+
+    /**
+     * Noop function.
+     */
+
+    function noop$1(){}
+
+    /**
+     * JSONP handler
+     *
+     * Options:
+     *  - param {String} qs parameter (`callback`)
+     *  - prefix {String} qs parameter (`__jp`)
+     *  - name {String} qs parameter (`prefix` + incr)
+     *  - timeout {Number} how long after a timeout error is emitted (`60000`)
+     *
+     * @param {String} url
+     * @param {Object|Function} optional options / callback
+     * @param {Function} optional callback
+     */
+
+    function jsonp(url, opts, fn){
+      if ('function' == typeof opts) {
+        fn = opts;
+        opts = {};
+      }
+      if (!opts) opts = {};
+
+      var prefix = opts.prefix || '__jp';
+
+      // use the callback name that was passed if one was provided.
+      // otherwise generate a unique name by incrementing our counter.
+      var id = opts.name || (prefix + (count++));
+
+      var param = opts.param || 'callback';
+      var timeout = null != opts.timeout ? opts.timeout : 60000;
+      var enc = encodeURIComponent;
+      var target = document.getElementsByTagName('script')[0] || document.head;
+      var script;
+      var timer;
 
 
-    var frontierFrontend$1 = {
+      if (timeout) {
+        timer = setTimeout(function(){
+          cleanup();
+          if (fn) fn(new Error('Timeout'));
+        }, timeout);
+      }
+
+      function cleanup(){
+        if (script.parentNode) script.parentNode.removeChild(script);
+        window[id] = noop$1;
+        if (timer) clearTimeout(timer);
+      }
+
+      function cancel(){
+        if (window[id]) {
+          cleanup();
+        }
+      }
+
+      window[id] = function(data){
+        cleanup();
+        if (fn) fn(null, data);
+      };
+
+      // add qs component
+      url += (~url.indexOf('?') ? '&' : '?') + param + '=' + enc(id);
+      url = url.replace('?&', '?');
+
+
+      // create script
+      script = document.createElement('script');
+      script.src = url;
+      target.parentNode.insertBefore(script, target);
+
+      return cancel;
+    }
+
+    let {auth: auth$1, ajx: ajx$1, currentUser: currentUser$1 } = frontend;
+
+
+    var frontend$1 = {
         auth: auth$1,
         ajx: ajx$1,
-        currentUser: currentUser$1
+        currentUser: currentUser$1,
+        jsonp: jsonp_1
     };
-    var frontierFrontend_1 = frontierFrontend$1.auth;
-    var frontierFrontend_2 = frontierFrontend$1.ajx;
-    var frontierFrontend_3 = frontierFrontend$1.currentUser;
+    var frontend_1 = frontend$1.auth;
+    var frontend_2 = frontend$1.ajx;
+    var frontend_3 = frontend$1.currentUser;
 
     /* src/components/Brand.svelte generated by Svelte v3.16.7 */
 
@@ -1882,7 +1926,7 @@ var app = (function () {
     			t = space();
     			if (default_slot) default_slot.c();
     			attr_dev(nav, "class", "c-nav");
-    			add_location(nav, file$2, 37, 4, 871);
+    			add_location(nav, file$2, 37, 4, 864);
     		},
     		m: function mount(target, anchor) {
     			insert_dev(target, nav, anchor);
@@ -1986,9 +2030,9 @@ var app = (function () {
     			t2 = space();
     			if (default_slot) default_slot.c();
     			attr_dev(a, "href", "/login");
-    			add_location(a, file$2, 33, 8, 746);
+    			add_location(a, file$2, 33, 8, 739);
     			attr_dev(nav, "class", "c-nav");
-    			add_location(nav, file$2, 29, 4, 612);
+    			add_location(nav, file$2, 29, 4, 605);
     			dispose = listen_dev(a, "click", /*click_handler*/ ctx[8], false, false, false);
     		},
     		m: function mount(target, anchor) {
@@ -2077,7 +2121,7 @@ var app = (function () {
     			t = text(t_value);
     			attr_dev(a, "href", a_href_value = /*href*/ ctx[10]);
     			toggle_class(a, "active", /*active*/ ctx[11]);
-    			add_location(a, file$2, 39, 10, 947);
+    			add_location(a, file$2, 39, 10, 940);
     		},
     		m: function mount(target, anchor) {
     			insert_dev(target, a, anchor);
@@ -2123,7 +2167,7 @@ var app = (function () {
     			t = text(t_value);
     			attr_dev(a, "href", a_href_value = /*href*/ ctx[10]);
     			toggle_class(a, "active", /*active*/ ctx[11]);
-    			add_location(a, file$2, 31, 10, 688);
+    			add_location(a, file$2, 31, 10, 681);
     		},
     		m: function mount(target, anchor) {
     			insert_dev(target, a, anchor);
@@ -2242,14 +2286,14 @@ var app = (function () {
     	let $isActive;
     	let $auth;
     	let $goto;
-    	validate_store(frontierFrontend_3, "currentUser");
-    	component_subscribe($$self, frontierFrontend_3, $$value => $$invalidate(1, $currentUser = $$value));
+    	validate_store(frontend_3, "currentUser");
+    	component_subscribe($$self, frontend_3, $$value => $$invalidate(1, $currentUser = $$value));
     	validate_store(url, "url");
     	component_subscribe($$self, url, $$value => $$invalidate(4, $url = $$value));
     	validate_store(isActive, "isActive");
     	component_subscribe($$self, isActive, $$value => $$invalidate(5, $isActive = $$value));
-    	validate_store(frontierFrontend_1, "auth");
-    	component_subscribe($$self, frontierFrontend_1, $$value => $$invalidate(2, $auth = $$value));
+    	validate_store(frontend_1, "auth");
+    	component_subscribe($$self, frontend_1, $$value => $$invalidate(2, $auth = $$value));
     	validate_store(goto, "goto");
     	component_subscribe($$self, goto, $$value => $$invalidate(3, $goto = $$value));
     	let links = [];
@@ -2285,10 +2329,10 @@ var app = (function () {
 
     	$$self.$inject_state = $$props => {
     		if ("links" in $$props) $$invalidate(0, links = $$props.links);
-    		if ("$currentUser" in $$props) frontierFrontend_3.set($currentUser = $$props.$currentUser);
+    		if ("$currentUser" in $$props) frontend_3.set($currentUser = $$props.$currentUser);
     		if ("$url" in $$props) url.set($url = $$props.$url);
     		if ("$isActive" in $$props) isActive.set($isActive = $$props.$isActive);
-    		if ("$auth" in $$props) frontierFrontend_1.set($auth = $$props.$auth);
+    		if ("$auth" in $$props) frontend_1.set($auth = $$props.$auth);
     		if ("$goto" in $$props) goto.set($goto = $$props.$goto);
     	};
 
@@ -2322,16 +2366,16 @@ var app = (function () {
     /* src/components/Header.svelte generated by Svelte v3.16.7 */
     const file$3 = "src/components/Header.svelte";
 
-    // (20:0) {:else}
+    // (19:0) {:else}
     function create_else_block$1(ctx) {
     	let header;
 
     	const block = {
     		c: function create() {
     			header = element("header");
-    			header.textContent = "Knightworks";
+    			header.textContent = "FrontierJS";
     			attr_dev(header, "class", "c-header");
-    			add_location(header, file$3, 20, 4, 497);
+    			add_location(header, file$3, 19, 2, 457);
     		},
     		m: function mount(target, anchor) {
     			insert_dev(target, header, anchor);
@@ -2348,14 +2392,14 @@ var app = (function () {
     		block,
     		id: create_else_block$1.name,
     		type: "else",
-    		source: "(20:0) {:else}",
+    		source: "(19:0) {:else}",
     		ctx
     	});
 
     	return block;
     }
 
-    // (9:0) {#if $currentUser}
+    // (8:0) {#if $currentUser}
     function create_if_block$2(ctx) {
     	let header;
     	let div1;
@@ -2382,11 +2426,11 @@ var app = (function () {
     			t = space();
     			create_component(nav.$$.fragment);
     			attr_dev(div0, "class", "c-nav-logo-holder");
-    			add_location(div0, file$3, 11, 8, 302);
+    			add_location(div0, file$3, 10, 6, 286);
     			attr_dev(div1, "class", "o-container");
-    			add_location(div1, file$3, 10, 4, 268);
+    			add_location(div1, file$3, 9, 4, 254);
     			attr_dev(header, "class", "c-header");
-    			add_location(header, file$3, 9, 4, 238);
+    			add_location(header, file$3, 8, 2, 224);
     		},
     		m: function mount(target, anchor) {
     			insert_dev(target, header, anchor);
@@ -2428,14 +2472,14 @@ var app = (function () {
     		block,
     		id: create_if_block$2.name,
     		type: "if",
-    		source: "(9:0) {#if $currentUser}",
+    		source: "(8:0) {#if $currentUser}",
     		ctx
     	});
 
     	return block;
     }
 
-    // (13:12) <Brand>
+    // (12:8) <Brand>
     function create_default_slot$1(ctx) {
     	let span;
     	let t_value = /*$currentUser*/ ctx[0].email + "";
@@ -2445,7 +2489,7 @@ var app = (function () {
     		c: function create() {
     			span = element("span");
     			t = text(t_value);
-    			add_location(span, file$3, 13, 16, 370);
+    			add_location(span, file$3, 12, 10, 344);
     		},
     		m: function mount(target, anchor) {
     			insert_dev(target, span, anchor);
@@ -2463,7 +2507,7 @@ var app = (function () {
     		block,
     		id: create_default_slot$1.name,
     		type: "slot",
-    		source: "(13:12) <Brand>",
+    		source: "(12:8) <Brand>",
     		ctx
     	});
 
@@ -2552,15 +2596,15 @@ var app = (function () {
 
     function instance$4($$self, $$props, $$invalidate) {
     	let $currentUser;
-    	validate_store(frontierFrontend_3, "currentUser");
-    	component_subscribe($$self, frontierFrontend_3, $$value => $$invalidate(0, $currentUser = $$value));
+    	validate_store(frontend_3, "currentUser");
+    	component_subscribe($$self, frontend_3, $$value => $$invalidate(0, $currentUser = $$value));
 
     	$$self.$capture_state = () => {
     		return {};
     	};
 
     	$$self.$inject_state = $$props => {
-    		if ("$currentUser" in $$props) frontierFrontend_3.set($currentUser = $$props.$currentUser);
+    		if ("$currentUser" in $$props) frontend_3.set($currentUser = $$props.$currentUser);
     	};
 
     	return [$currentUser];
@@ -2784,12 +2828,12 @@ var app = (function () {
     	let $isActive;
     	let $auth;
     	let $goto;
-    	validate_store(frontierFrontend_3, "currentUser");
-    	component_subscribe($$self, frontierFrontend_3, $$value => $$invalidate(0, $currentUser = $$value));
+    	validate_store(frontend_3, "currentUser");
+    	component_subscribe($$self, frontend_3, $$value => $$invalidate(0, $currentUser = $$value));
     	validate_store(isActive, "isActive");
     	component_subscribe($$self, isActive, $$value => $$invalidate(1, $isActive = $$value));
-    	validate_store(frontierFrontend_1, "auth");
-    	component_subscribe($$self, frontierFrontend_1, $$value => $$invalidate(2, $auth = $$value));
+    	validate_store(frontend_1, "auth");
+    	component_subscribe($$self, frontend_1, $$value => $$invalidate(2, $auth = $$value));
     	validate_store(goto, "goto");
     	component_subscribe($$self, goto, $$value => $$invalidate(3, $goto = $$value));
     	let loginRoute = "/login";
@@ -2806,9 +2850,9 @@ var app = (function () {
 
     	$$self.$inject_state = $$props => {
     		if ("loginRoute" in $$props) loginRoute = $$props.loginRoute;
-    		if ("$currentUser" in $$props) frontierFrontend_3.set($currentUser = $$props.$currentUser);
+    		if ("$currentUser" in $$props) frontend_3.set($currentUser = $$props.$currentUser);
     		if ("$isActive" in $$props) isActive.set($isActive = $$props.$isActive);
-    		if ("$auth" in $$props) frontierFrontend_1.set($auth = $$props.$auth);
+    		if ("$auth" in $$props) frontend_1.set($auth = $$props.$auth);
     		if ("$goto" in $$props) goto.set($goto = $$props.$goto);
     	};
 
@@ -2825,6 +2869,107 @@ var app = (function () {
     			tagName: "Layout",
     			options,
     			id: create_fragment$6.name
+    		});
+    	}
+    }
+
+    /* src/pages/_fallback.svelte generated by Svelte v3.16.7 */
+    const file$5 = "src/pages/_fallback.svelte";
+
+    function create_fragment$7(ctx) {
+    	let div;
+    	let h1;
+    	let t1;
+    	let p0;
+    	let t3;
+    	let p1;
+    	let a;
+    	let t4;
+    	let a_href_value;
+
+    	const block = {
+    		c: function create() {
+    			div = element("div");
+    			h1 = element("h1");
+    			h1.textContent = "404";
+    			t1 = space();
+    			p0 = element("p");
+    			p0.textContent = "Page not found.";
+    			t3 = space();
+    			p1 = element("p");
+    			a = element("a");
+    			t4 = text("Go back");
+    			attr_dev(h1, "class", "svelte-s81qzn");
+    			add_location(h1, file$5, 24, 4, 360);
+    			add_location(p0, file$5, 25, 4, 377);
+    			attr_dev(a, "href", a_href_value = /*$url*/ ctx[0]("../"));
+    			add_location(a, file$5, 26, 7, 407);
+    			add_location(p1, file$5, 26, 4, 404);
+    			attr_dev(div, "class", "c-404 svelte-s81qzn");
+    			add_location(div, file$5, 23, 0, 336);
+    		},
+    		l: function claim(nodes) {
+    			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
+    		},
+    		m: function mount(target, anchor) {
+    			insert_dev(target, div, anchor);
+    			append_dev(div, h1);
+    			append_dev(div, t1);
+    			append_dev(div, p0);
+    			append_dev(div, t3);
+    			append_dev(div, p1);
+    			append_dev(p1, a);
+    			append_dev(a, t4);
+    		},
+    		p: function update(ctx, [dirty]) {
+    			if (dirty & /*$url*/ 1 && a_href_value !== (a_href_value = /*$url*/ ctx[0]("../"))) {
+    				attr_dev(a, "href", a_href_value);
+    			}
+    		},
+    		i: noop,
+    		o: noop,
+    		d: function destroy(detaching) {
+    			if (detaching) detach_dev(div);
+    		}
+    	};
+
+    	dispatch_dev("SvelteRegisterBlock", {
+    		block,
+    		id: create_fragment$7.name,
+    		type: "component",
+    		source: "",
+    		ctx
+    	});
+
+    	return block;
+    }
+
+    function instance$7($$self, $$props, $$invalidate) {
+    	let $url;
+    	validate_store(url, "url");
+    	component_subscribe($$self, url, $$value => $$invalidate(0, $url = $$value));
+
+    	$$self.$capture_state = () => {
+    		return {};
+    	};
+
+    	$$self.$inject_state = $$props => {
+    		if ("$url" in $$props) url.set($url = $$props.$url);
+    	};
+
+    	return [$url];
+    }
+
+    class Fallback extends SvelteComponentDev {
+    	constructor(options) {
+    		super(options);
+    		init(this, options, instance$7, create_fragment$7, safe_not_equal, {});
+
+    		dispatch_dev("SvelteRegisterComponent", {
+    			component: this,
+    			tagName: "Fallback",
+    			options,
+    			id: create_fragment$7.name
     		});
     	}
     }
@@ -5221,9 +5366,9 @@ var app = (function () {
       return input.match(escapedStringRegExp)[1].replace(doubleQuoteRegExp, "'");
     }
 
-    /* node_modules/frontier-components/Field.svelte generated by Svelte v3.16.7 */
+    /* node_modules/@frontierjs/frontend/components/Field.svelte generated by Svelte v3.16.7 */
 
-    const file$5 = "node_modules/frontier-components/Field.svelte";
+    const file$6 = "node_modules/@frontierjs/frontend/components/Field.svelte";
 
     // (22:8) {:else}
     function create_else_block$3(ctx) {
@@ -5238,7 +5383,7 @@ var app = (function () {
     			attr_dev(input, "placeholder", /*placeholder*/ ctx[4]);
     			input.required = /*required*/ ctx[7];
     			attr_dev(input, "class", "svelte-1kt18kf");
-    			add_location(input, file$5, 22, 8, 775);
+    			add_location(input, file$6, 22, 8, 775);
     			dispose = listen_dev(input, "input", /*input_input_handler_4*/ ctx[12]);
     		},
     		m: function mount(target, anchor) {
@@ -5291,7 +5436,7 @@ var app = (function () {
     			attr_dev(input, "name", /*name*/ ctx[2]);
     			attr_dev(input, "placeholder", /*placeholder*/ ctx[4]);
     			attr_dev(input, "class", "svelte-1kt18kf");
-    			add_location(input, file$5, 20, 12, 689);
+    			add_location(input, file$6, 20, 12, 689);
     			dispose = listen_dev(input, "input", /*input_input_handler_3*/ ctx[11]);
     		},
     		m: function mount(target, anchor) {
@@ -5341,7 +5486,7 @@ var app = (function () {
     			attr_dev(input, "placeholder", /*placeholder*/ ctx[4]);
     			input.required = /*required*/ ctx[7];
     			attr_dev(input, "class", "svelte-1kt18kf");
-    			add_location(input, file$5, 18, 12, 573);
+    			add_location(input, file$6, 18, 12, 573);
     			dispose = listen_dev(input, "input", /*input_input_handler_2*/ ctx[10]);
     		},
     		m: function mount(target, anchor) {
@@ -5395,7 +5540,7 @@ var app = (function () {
     			attr_dev(input, "placeholder", /*placeholder*/ ctx[4]);
     			input.required = /*required*/ ctx[7];
     			attr_dev(input, "class", "svelte-1kt18kf");
-    			add_location(input, file$5, 16, 12, 458);
+    			add_location(input, file$6, 16, 12, 458);
     			dispose = listen_dev(input, "input", /*input_input_handler_1*/ ctx[9]);
     		},
     		m: function mount(target, anchor) {
@@ -5449,7 +5594,7 @@ var app = (function () {
     			attr_dev(input, "placeholder", /*placeholder*/ ctx[4]);
     			input.required = /*required*/ ctx[7];
     			attr_dev(input, "class", "svelte-1kt18kf");
-    			add_location(input, file$5, 14, 12, 347);
+    			add_location(input, file$6, 14, 12, 347);
     			dispose = listen_dev(input, "input", /*input_input_handler*/ ctx[8]);
     		},
     		m: function mount(target, anchor) {
@@ -5491,7 +5636,7 @@ var app = (function () {
     }
 
     // (25:8) {#if label != 'display-none'}
-    function create_if_block_2(ctx) {
+    function create_if_block_2$1(ctx) {
     	let label_1;
     	let t;
 
@@ -5501,7 +5646,7 @@ var app = (function () {
     			t = text(/*label*/ ctx[3]);
     			attr_dev(label_1, "for", /*name*/ ctx[2]);
     			attr_dev(label_1, "class", "svelte-1kt18kf");
-    			add_location(label_1, file$5, 25, 12, 910);
+    			add_location(label_1, file$6, 25, 12, 910);
     		},
     		m: function mount(target, anchor) {
     			insert_dev(target, label_1, anchor);
@@ -5521,7 +5666,7 @@ var app = (function () {
 
     	dispatch_dev("SvelteRegisterBlock", {
     		block,
-    		id: create_if_block_2.name,
+    		id: create_if_block_2$1.name,
     		type: "if",
     		source: "(25:8) {#if label != 'display-none'}",
     		ctx
@@ -5540,7 +5685,7 @@ var app = (function () {
     			p = element("p");
     			t = text(/*help*/ ctx[6]);
     			attr_dev(p, "class", "help");
-    			add_location(p, file$5, 31, 8, 1062);
+    			add_location(p, file$6, 31, 8, 1062);
     		},
     		m: function mount(target, anchor) {
     			insert_dev(target, p, anchor);
@@ -5576,7 +5721,7 @@ var app = (function () {
     			p = element("p");
     			t = text(t_value);
     			attr_dev(p, "class", "error");
-    			add_location(p, file$5, 29, 8, 1001);
+    			add_location(p, file$6, 29, 8, 1001);
     		},
     		m: function mount(target, anchor) {
     			insert_dev(target, p, anchor);
@@ -5601,7 +5746,7 @@ var app = (function () {
     	return block;
     }
 
-    function create_fragment$7(ctx) {
+    function create_fragment$8(ctx) {
     	let fieldset;
     	let div;
     	let t0;
@@ -5617,7 +5762,7 @@ var app = (function () {
 
     	let current_block_type = select_block_type(ctx);
     	let if_block0 = current_block_type(ctx);
-    	let if_block1 = /*label*/ ctx[3] != "display-none" && create_if_block_2(ctx);
+    	let if_block1 = /*label*/ ctx[3] != "display-none" && create_if_block_2$1(ctx);
 
     	function select_block_type_1(ctx, dirty) {
     		if (/*errors*/ ctx[5].length) return create_if_block$4;
@@ -5637,9 +5782,9 @@ var app = (function () {
     			t1 = space();
     			if (if_block2) if_block2.c();
     			attr_dev(div, "class", "control");
-    			add_location(div, file$5, 12, 4, 283);
+    			add_location(div, file$6, 12, 4, 283);
     			attr_dev(fieldset, "class", "field");
-    			add_location(fieldset, file$5, 11, 0, 254);
+    			add_location(fieldset, file$6, 11, 0, 254);
     		},
     		l: function claim(nodes) {
     			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
@@ -5670,7 +5815,7 @@ var app = (function () {
     				if (if_block1) {
     					if_block1.p(ctx, dirty);
     				} else {
-    					if_block1 = create_if_block_2(ctx);
+    					if_block1 = create_if_block_2$1(ctx);
     					if_block1.c();
     					if_block1.m(div, null);
     				}
@@ -5706,7 +5851,7 @@ var app = (function () {
 
     	dispatch_dev("SvelteRegisterBlock", {
     		block,
-    		id: create_fragment$7.name,
+    		id: create_fragment$8.name,
     		type: "component",
     		source: "",
     		ctx
@@ -5715,7 +5860,7 @@ var app = (function () {
     	return block;
     }
 
-    function instance$7($$self, $$props, $$invalidate) {
+    function instance$8($$self, $$props, $$invalidate) {
     	let { type = "text" } = $$props;
     	let { value } = $$props;
     	let { name } = $$props;
@@ -5811,7 +5956,7 @@ var app = (function () {
     	constructor(options) {
     		super(options);
 
-    		init(this, options, instance$7, create_fragment$7, safe_not_equal, {
+    		init(this, options, instance$8, create_fragment$8, safe_not_equal, {
     			type: 1,
     			value: 0,
     			name: 2,
@@ -5826,7 +5971,7 @@ var app = (function () {
     			component: this,
     			tagName: "Field",
     			options,
-    			id: create_fragment$7.name
+    			id: create_fragment$8.name
     		});
 
     		const { ctx } = this.$$;
@@ -5917,13 +6062,13 @@ var app = (function () {
 
     var Field$2 = getCjsExportFromNamespace(Field$1);
 
-    var frontierComponents = {
+    var components = {
         Field: Field$2
     };
-    var frontierComponents_1 = frontierComponents.Field;
+    var components_1 = components.Field;
 
     /* src/pages/dashboard.svelte generated by Svelte v3.16.7 */
-    const file$6 = "src/pages/dashboard.svelte";
+    const file$7 = "src/pages/dashboard.svelte";
 
     function get_each_context$1(ctx, list, i) {
     	const child_ctx = ctx.slice();
@@ -5954,7 +6099,7 @@ var app = (function () {
     		field0_props.value = /*user*/ ctx[2].email;
     	}
 
-    	const field0 = new frontierComponents_1({ props: field0_props, $$inline: true });
+    	const field0 = new components_1({ props: field0_props, $$inline: true });
     	binding_callbacks.push(() => bind(field0, "value", field0_value_binding));
 
     	function field1_value_binding(value_1) {
@@ -5967,7 +6112,7 @@ var app = (function () {
     		field1_props.value = /*user*/ ctx[2].password;
     	}
 
-    	const field1 = new frontierComponents_1({ props: field1_props, $$inline: true });
+    	const field1 = new components_1({ props: field1_props, $$inline: true });
     	binding_callbacks.push(() => bind(field1, "value", field1_value_binding));
 
     	function field2_value_binding(value_2) {
@@ -5980,7 +6125,7 @@ var app = (function () {
     		field2_props.value = /*user*/ ctx[2].site;
     	}
 
-    	const field2 = new frontierComponents_1({ props: field2_props, $$inline: true });
+    	const field2 = new components_1({ props: field2_props, $$inline: true });
     	binding_callbacks.push(() => bind(field2, "value", field2_value_binding));
 
     	const block = {
@@ -5994,8 +6139,8 @@ var app = (function () {
     			t2 = space();
     			button = element("button");
     			button.textContent = "Save";
-    			add_location(button, file$6, 46, 8, 1530);
-    			add_location(div, file$6, 42, 4, 1331);
+    			add_location(button, file$7, 46, 8, 1514);
+    			add_location(div, file$7, 42, 4, 1315);
     			dispose = listen_dev(button, "click", /*save*/ ctx[6], false, false, false);
     		},
     		m: function mount(target, anchor) {
@@ -6079,7 +6224,7 @@ var app = (function () {
     		c: function create() {
     			div = element("div");
     			div.textContent = "No users found";
-    			add_location(div, file$6, 68, 12, 2264);
+    			add_location(div, file$7, 68, 12, 2248);
     		},
     		m: function mount(target, anchor) {
     			insert_dev(target, div, anchor);
@@ -6113,7 +6258,7 @@ var app = (function () {
     		c: function create() {
     			button = element("button");
     			button.textContent = "Deactivate";
-    			add_location(button, file$6, 63, 24, 2100);
+    			add_location(button, file$7, 63, 24, 2084);
     			dispose = listen_dev(button, "click", click_handler_4, false, false, false);
     		},
     		m: function mount(target, anchor) {
@@ -6152,7 +6297,7 @@ var app = (function () {
     		c: function create() {
     			button = element("button");
     			button.textContent = "Reactivate";
-    			add_location(button, file$6, 61, 24, 1978);
+    			add_location(button, file$7, 61, 24, 1962);
     			dispose = listen_dev(button, "click", click_handler_3, false, false, false);
     		},
     		m: function mount(target, anchor) {
@@ -6235,13 +6380,13 @@ var app = (function () {
     			td5 = element("td");
     			if_block.c();
     			t10 = space();
-    			add_location(td0, file$6, 54, 16, 1679);
-    			add_location(td1, file$6, 55, 16, 1714);
-    			add_location(td2, file$6, 56, 16, 1752);
-    			add_location(td3, file$6, 57, 16, 1789);
-    			add_location(td4, file$6, 58, 16, 1864);
-    			add_location(td5, file$6, 59, 16, 1907);
-    			add_location(tr, file$6, 53, 12, 1658);
+    			add_location(td0, file$7, 54, 16, 1663);
+    			add_location(td1, file$7, 55, 16, 1698);
+    			add_location(td2, file$7, 56, 16, 1736);
+    			add_location(td3, file$7, 57, 16, 1773);
+    			add_location(td4, file$7, 58, 16, 1848);
+    			add_location(td5, file$7, 59, 16, 1891);
+    			add_location(tr, file$7, 53, 12, 1642);
     			this.first = tr;
     		},
     		m: function mount(target, anchor) {
@@ -6301,7 +6446,7 @@ var app = (function () {
     	return block;
     }
 
-    function create_fragment$8(ctx) {
+    function create_fragment$9(ctx) {
     	let div;
     	let h1;
     	let t1;
@@ -6359,14 +6504,14 @@ var app = (function () {
     				each_blocks[i].c();
     			}
 
-    			add_location(h1, file$6, 36, 0, 1096);
-    			add_location(button0, file$6, 37, 0, 1111);
-    			add_location(button1, file$6, 38, 0, 1176);
-    			add_location(button2, file$6, 40, 0, 1239);
-    			add_location(tbody, file$6, 51, 4, 1598);
-    			add_location(table, file$6, 50, 0, 1586);
+    			add_location(h1, file$7, 36, 0, 1080);
+    			add_location(button0, file$7, 37, 0, 1095);
+    			add_location(button1, file$7, 38, 0, 1160);
+    			add_location(button2, file$7, 40, 0, 1223);
+    			add_location(tbody, file$7, 51, 4, 1582);
+    			add_location(table, file$7, 50, 0, 1570);
     			attr_dev(div, "class", "o-container");
-    			add_location(div, file$6, 35, 0, 1070);
+    			add_location(div, file$7, 35, 0, 1054);
 
     			dispose = [
     				listen_dev(button0, "click", /*click_handler*/ ctx[7], false, false, false),
@@ -6461,7 +6606,7 @@ var app = (function () {
 
     	dispatch_dev("SvelteRegisterBlock", {
     		block,
-    		id: create_fragment$8.name,
+    		id: create_fragment$9.name,
     		type: "component",
     		source: "",
     		ctx
@@ -6470,7 +6615,7 @@ var app = (function () {
     	return block;
     }
 
-    function instance$8($$self, $$props, $$invalidate) {
+    function instance$9($$self, $$props, $$invalidate) {
     	let user = {
     		email: "jordan+10@knight.works",
     		password: "",
@@ -6482,22 +6627,22 @@ var app = (function () {
     	onMount(() => getUsers());
 
     	let getUsers = async function (withDeleted = "") {
-    		let res = await frontierFrontend_2.get("/users" + withDeleted);
+    		let res = await frontend_2.get("/users" + withDeleted);
     		$$invalidate(0, users = res.filter(user => user.date_added !== null));
     	};
 
     	let deactivate = async function (id) {
-    		let res = await frontierFrontend_2.destroy("/users/" + id);
+    		let res = await frontend_2.destroy("/users/" + id);
     		$$invalidate(0, users = res.ok ? users.filter(u => u.id !== id) : users);
     	};
 
     	let reactivate = async function (id) {
-    		let res = await frontierFrontend_2.restore("/users/" + id);
+    		let res = await frontend_2.restore("/users/" + id);
     		$$invalidate(0, users = users.map(u => u.id === id ? res : u));
     	};
 
     	let save = async function () {
-    		let res = await frontierFrontend_2.save("/users", user);
+    		let res = await frontend_2.save("/users", user);
     		$$invalidate(0, users = res.error ? users : users.concat([res]));
     	};
 
@@ -6559,112 +6704,11 @@ var app = (function () {
     class Dashboard extends SvelteComponentDev {
     	constructor(options) {
     		super(options);
-    		init(this, options, instance$8, create_fragment$8, safe_not_equal, {});
-
-    		dispatch_dev("SvelteRegisterComponent", {
-    			component: this,
-    			tagName: "Dashboard",
-    			options,
-    			id: create_fragment$8.name
-    		});
-    	}
-    }
-
-    /* src/pages/_fallback.svelte generated by Svelte v3.16.7 */
-    const file$7 = "src/pages/_fallback.svelte";
-
-    function create_fragment$9(ctx) {
-    	let div;
-    	let h1;
-    	let t1;
-    	let p0;
-    	let t3;
-    	let p1;
-    	let a;
-    	let t4;
-    	let a_href_value;
-
-    	const block = {
-    		c: function create() {
-    			div = element("div");
-    			h1 = element("h1");
-    			h1.textContent = "404";
-    			t1 = space();
-    			p0 = element("p");
-    			p0.textContent = "Page not found.";
-    			t3 = space();
-    			p1 = element("p");
-    			a = element("a");
-    			t4 = text("Go back");
-    			attr_dev(h1, "class", "svelte-s81qzn");
-    			add_location(h1, file$7, 24, 4, 370);
-    			add_location(p0, file$7, 25, 4, 387);
-    			attr_dev(a, "href", a_href_value = /*$url*/ ctx[0]("../"));
-    			add_location(a, file$7, 26, 7, 417);
-    			add_location(p1, file$7, 26, 4, 414);
-    			attr_dev(div, "class", "c-404 svelte-s81qzn");
-    			add_location(div, file$7, 23, 0, 346);
-    		},
-    		l: function claim(nodes) {
-    			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
-    		},
-    		m: function mount(target, anchor) {
-    			insert_dev(target, div, anchor);
-    			append_dev(div, h1);
-    			append_dev(div, t1);
-    			append_dev(div, p0);
-    			append_dev(div, t3);
-    			append_dev(div, p1);
-    			append_dev(p1, a);
-    			append_dev(a, t4);
-    		},
-    		p: function update(ctx, [dirty]) {
-    			if (dirty & /*$url*/ 1 && a_href_value !== (a_href_value = /*$url*/ ctx[0]("../"))) {
-    				attr_dev(a, "href", a_href_value);
-    			}
-    		},
-    		i: noop,
-    		o: noop,
-    		d: function destroy(detaching) {
-    			if (detaching) detach_dev(div);
-    		}
-    	};
-
-    	dispatch_dev("SvelteRegisterBlock", {
-    		block,
-    		id: create_fragment$9.name,
-    		type: "component",
-    		source: "",
-    		ctx
-    	});
-
-    	return block;
-    }
-
-    function instance$9($$self, $$props, $$invalidate) {
-    	let $url;
-    	validate_store(url, "url");
-    	component_subscribe($$self, url, $$value => $$invalidate(0, $url = $$value));
-
-    	$$self.$capture_state = () => {
-    		return {};
-    	};
-
-    	$$self.$inject_state = $$props => {
-    		if ("$url" in $$props) url.set($url = $$props.$url);
-    	};
-
-    	return [$url];
-    }
-
-    class Fallback extends SvelteComponentDev {
-    	constructor(options) {
-    		super(options);
     		init(this, options, instance$9, create_fragment$9, safe_not_equal, {});
 
     		dispatch_dev("SvelteRegisterComponent", {
     			component: this,
-    			tagName: "Fallback",
+    			tagName: "Dashboard",
     			options,
     			id: create_fragment$9.name
     		});
@@ -6682,12 +6726,12 @@ var app = (function () {
     	let t3;
     	let current;
 
-    	const field0 = new frontierComponents_1({
+    	const field0 = new components_1({
     			props: { name: "name", value: /*name*/ ctx[0] },
     			$$inline: true
     		});
 
-    	const field1 = new frontierComponents_1({
+    	const field1 = new components_1({
     			props: {
     				name: "email",
     				type: "email",
@@ -6696,7 +6740,7 @@ var app = (function () {
     			$$inline: true
     		});
 
-    	const field2 = new frontierComponents_1({
+    	const field2 = new components_1({
     			props: {
     				name: "password",
     				type: "password",
@@ -6705,7 +6749,7 @@ var app = (function () {
     			$$inline: true
     		});
 
-    	const field3 = new frontierComponents_1({
+    	const field3 = new components_1({
     			props: {
     				label: "Numberfield",
     				type: "number",
@@ -6715,7 +6759,7 @@ var app = (function () {
     			$$inline: true
     		});
 
-    	const field4 = new frontierComponents_1({
+    	const field4 = new components_1({
     			props: {
     				name: "last_name",
     				value: /*lastName*/ ctx[1]
@@ -6735,7 +6779,7 @@ var app = (function () {
     			create_component(field3.$$.fragment);
     			t3 = space();
     			create_component(field4.$$.fragment);
-    			add_location(div, file$8, 8, 0, 173);
+    			add_location(div, file$8, 8, 0, 165);
     		},
     		l: function claim(nodes) {
     			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
@@ -6828,10 +6872,96 @@ var app = (function () {
     	}
     }
 
-    /* src/pages/login.svelte generated by Svelte v3.16.7 */
-    const file$9 = "src/pages/login.svelte";
+    /* src/pages/index.svelte generated by Svelte v3.16.7 */
+    const file$9 = "src/pages/index.svelte";
 
     function create_fragment$b(ctx) {
+    	let t0;
+    	let div1;
+    	let div0;
+    	let t1;
+    	let t2_value = /*$currentUser*/ ctx[0].email + "";
+    	let t2;
+
+    	const block = {
+    		c: function create() {
+    			t0 = space();
+    			div1 = element("div");
+    			div0 = element("div");
+    			t1 = text("Logged in: ");
+    			t2 = text(t2_value);
+    			document.title = "Admin App";
+    			attr_dev(div0, "class", "o-container-home svelte-g8q49f");
+    			add_location(div0, file$9, 37, 4, 583);
+    			attr_dev(div1, "class", "o-container-vertical");
+    			add_location(div1, file$9, 36, 0, 544);
+    		},
+    		l: function claim(nodes) {
+    			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
+    		},
+    		m: function mount(target, anchor) {
+    			insert_dev(target, t0, anchor);
+    			insert_dev(target, div1, anchor);
+    			append_dev(div1, div0);
+    			append_dev(div0, t1);
+    			append_dev(div0, t2);
+    		},
+    		p: function update(ctx, [dirty]) {
+    			if (dirty & /*$currentUser*/ 1 && t2_value !== (t2_value = /*$currentUser*/ ctx[0].email + "")) set_data_dev(t2, t2_value);
+    		},
+    		i: noop,
+    		o: noop,
+    		d: function destroy(detaching) {
+    			if (detaching) detach_dev(t0);
+    			if (detaching) detach_dev(div1);
+    		}
+    	};
+
+    	dispatch_dev("SvelteRegisterBlock", {
+    		block,
+    		id: create_fragment$b.name,
+    		type: "component",
+    		source: "",
+    		ctx
+    	});
+
+    	return block;
+    }
+
+    function instance$b($$self, $$props, $$invalidate) {
+    	let $currentUser;
+    	validate_store(frontend_3, "currentUser");
+    	component_subscribe($$self, frontend_3, $$value => $$invalidate(0, $currentUser = $$value));
+
+    	$$self.$capture_state = () => {
+    		return {};
+    	};
+
+    	$$self.$inject_state = $$props => {
+    		if ("$currentUser" in $$props) frontend_3.set($currentUser = $$props.$currentUser);
+    	};
+
+    	return [$currentUser];
+    }
+
+    class Pages extends SvelteComponentDev {
+    	constructor(options) {
+    		super(options);
+    		init(this, options, instance$b, create_fragment$b, safe_not_equal, {});
+
+    		dispatch_dev("SvelteRegisterComponent", {
+    			component: this,
+    			tagName: "Pages",
+    			options,
+    			id: create_fragment$b.name
+    		});
+    	}
+    }
+
+    /* src/pages/login.svelte generated by Svelte v3.16.7 */
+    const file$a = "src/pages/login.svelte";
+
+    function create_fragment$c(ctx) {
     	let div2;
     	let div1;
     	let div0;
@@ -6858,7 +6988,7 @@ var app = (function () {
     		field0_props.value = /*form*/ ctx[0].email;
     	}
 
-    	const field0 = new frontierComponents_1({ props: field0_props, $$inline: true });
+    	const field0 = new components_1({ props: field0_props, $$inline: true });
     	binding_callbacks.push(() => bind(field0, "value", field0_value_binding));
 
     	function field1_value_binding(value_1) {
@@ -6875,7 +7005,7 @@ var app = (function () {
     		field1_props.value = /*form*/ ctx[0].password;
     	}
 
-    	const field1 = new frontierComponents_1({ props: field1_props, $$inline: true });
+    	const field1 = new components_1({ props: field1_props, $$inline: true });
     	binding_callbacks.push(() => bind(field1, "value", field1_value_binding));
 
     	const block = {
@@ -6890,14 +7020,14 @@ var app = (function () {
     			t1 = space();
     			button = element("button");
     			button.textContent = "Sign In";
-    			add_location(button, file$9, 41, 12, 1344);
-    			add_location(form_1, file$9, 38, 8, 1141);
+    			add_location(button, file$a, 41, 12, 1321);
+    			add_location(form_1, file$a, 38, 8, 1118);
     			attr_dev(div0, "class", "");
-    			add_location(div0, file$9, 37, 8, 1118);
+    			add_location(div0, file$a, 37, 8, 1095);
     			attr_dev(div1, "class", "o-container o-flex o-flex--center");
-    			add_location(div1, file$9, 36, 4, 1062);
+    			add_location(div1, file$a, 36, 4, 1039);
     			attr_dev(div2, "class", "o-container-vertical");
-    			add_location(div2, file$9, 35, 0, 1023);
+    			add_location(div2, file$a, 35, 0, 1000);
 
     			dispose = [
     				listen_dev(button, "mouseenter", checkForm, false, false, false),
@@ -6960,7 +7090,7 @@ var app = (function () {
 
     	dispatch_dev("SvelteRegisterBlock", {
     		block,
-    		id: create_fragment$b.name,
+    		id: create_fragment$c.name,
     		type: "component",
     		source: "",
     		ctx
@@ -6983,11 +7113,11 @@ var app = (function () {
     	}
     }
 
-    function instance$b($$self, $$props, $$invalidate) {
+    function instance$c($$self, $$props, $$invalidate) {
     	let $auth;
     	let $goto;
-    	validate_store(frontierFrontend_1, "auth");
-    	component_subscribe($$self, frontierFrontend_1, $$value => $$invalidate(2, $auth = $$value));
+    	validate_store(frontend_1, "auth");
+    	component_subscribe($$self, frontend_1, $$value => $$invalidate(2, $auth = $$value));
     	validate_store(goto, "goto");
     	component_subscribe($$self, goto, $$value => $$invalidate(3, $goto = $$value));
     	let form = {};
@@ -7018,7 +7148,7 @@ var app = (function () {
 
     	$$self.$inject_state = $$props => {
     		if ("form" in $$props) $$invalidate(0, form = $$props.form);
-    		if ("$auth" in $$props) frontierFrontend_1.set($auth = $$props.$auth);
+    		if ("$auth" in $$props) frontend_1.set($auth = $$props.$auth);
     		if ("$goto" in $$props) goto.set($goto = $$props.$goto);
     	};
 
@@ -7028,195 +7158,119 @@ var app = (function () {
     class Login extends SvelteComponentDev {
     	constructor(options) {
     		super(options);
-    		init(this, options, instance$b, create_fragment$b, safe_not_equal, {});
-
-    		dispatch_dev("SvelteRegisterComponent", {
-    			component: this,
-    			tagName: "Login",
-    			options,
-    			id: create_fragment$b.name
-    		});
-    	}
-    }
-
-    /* src/pages/index.svelte generated by Svelte v3.16.7 */
-    const file$a = "src/pages/index.svelte";
-
-    function create_fragment$c(ctx) {
-    	let t0;
-    	let div1;
-    	let div0;
-    	let t1;
-    	let t2_value = /*$currentUser*/ ctx[0].email + "";
-    	let t2;
-
-    	const block = {
-    		c: function create() {
-    			t0 = space();
-    			div1 = element("div");
-    			div0 = element("div");
-    			t1 = text("Logged in: ");
-    			t2 = text(t2_value);
-    			document.title = "Admin App";
-    			attr_dev(div0, "class", "o-container-home svelte-g8q49f");
-    			add_location(div0, file$a, 37, 4, 580);
-    			attr_dev(div1, "class", "o-container-vertical");
-    			add_location(div1, file$a, 36, 0, 541);
-    		},
-    		l: function claim(nodes) {
-    			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
-    		},
-    		m: function mount(target, anchor) {
-    			insert_dev(target, t0, anchor);
-    			insert_dev(target, div1, anchor);
-    			append_dev(div1, div0);
-    			append_dev(div0, t1);
-    			append_dev(div0, t2);
-    		},
-    		p: function update(ctx, [dirty]) {
-    			if (dirty & /*$currentUser*/ 1 && t2_value !== (t2_value = /*$currentUser*/ ctx[0].email + "")) set_data_dev(t2, t2_value);
-    		},
-    		i: noop,
-    		o: noop,
-    		d: function destroy(detaching) {
-    			if (detaching) detach_dev(t0);
-    			if (detaching) detach_dev(div1);
-    		}
-    	};
-
-    	dispatch_dev("SvelteRegisterBlock", {
-    		block,
-    		id: create_fragment$c.name,
-    		type: "component",
-    		source: "",
-    		ctx
-    	});
-
-    	return block;
-    }
-
-    function instance$c($$self, $$props, $$invalidate) {
-    	let $currentUser;
-    	validate_store(frontierFrontend_3, "currentUser");
-    	component_subscribe($$self, frontierFrontend_3, $$value => $$invalidate(0, $currentUser = $$value));
-
-    	$$self.$capture_state = () => {
-    		return {};
-    	};
-
-    	$$self.$inject_state = $$props => {
-    		if ("$currentUser" in $$props) frontierFrontend_3.set($currentUser = $$props.$currentUser);
-    	};
-
-    	return [$currentUser];
-    }
-
-    class Pages extends SvelteComponentDev {
-    	constructor(options) {
-    		super(options);
     		init(this, options, instance$c, create_fragment$c, safe_not_equal, {});
 
     		dispatch_dev("SvelteRegisterComponent", {
     			component: this,
-    			tagName: "Pages",
+    			tagName: "Login",
     			options,
     			id: create_fragment$c.name
     		});
     	}
     }
 
-    const routes = [
-    {
-      "isLayout": false,
-      "isFallback": false,
-      "path": "/dashboard",
-      "regex": "^/dashboard",
-      "name": "/dashboard",
-      "ranking": "ZZ",
-      "url": "/dashboard",
-      "component": () => Dashboard,
-      "layouts": [
-        {
-          "path": "/",
-          "url": "/",
-          "filepath": "/_layout.svelte",
-          "component": () => Layout
-        }
-      ]
-    },
-    {
-      "isLayout": false,
-      "isFallback": true,
-      "path": "/_fallback",
-      "regex": "^/",
-      "name": "/_fallback",
-      "ranking": "ZZ",
-      "url": "/_fallback",
-      "component": () => Fallback,
-      "layouts": [
-        {
-          "path": "/",
-          "url": "/",
-          "filepath": "/_layout.svelte",
-          "component": () => Layout
-        }
-      ]
-    },
-    {
-      "isLayout": false,
-      "isFallback": false,
-      "path": "/example",
-      "regex": "^/example",
-      "name": "/example",
-      "ranking": "ZZ",
-      "url": "/example",
-      "component": () => Example,
-      "layouts": [
-        {
-          "path": "/",
-          "url": "/",
-          "filepath": "/_layout.svelte",
-          "component": () => Layout
-        }
-      ]
-    },
-    {
-      "isLayout": false,
-      "isFallback": false,
-      "path": "/login",
-      "regex": "^/login",
-      "name": "/login",
-      "ranking": "ZZ",
-      "url": "/login",
-      "component": () => Login,
-      "layouts": [
-        {
-          "path": "/",
-          "url": "/",
-          "filepath": "/_layout.svelte",
-          "component": () => Layout
-        }
-      ]
-    },
-    {
-      "isLayout": false,
-      "isFallback": false,
-      "path": "/index",
-      "regex": "^/index",
-      "name": "/index",
-      "ranking": "ZZ",
-      "url": "/index",
-      "component": () => Pages,
-      "layouts": [
-        {
-          "path": "/",
-          "url": "/",
-          "filepath": "/_layout.svelte",
-          "component": () => Layout
-        }
-      ]
-    }
+    //layouts
+    const layouts = {
+      "/_layout": {
+        "component": () => Layout,
+        "options": {
+          "preload": false,
+          "precache-order": false,
+          "precache-proximity": true,
+          "recursive": true
+        },
+        "relativeDir": "",
+        "path": ""
+      }
+    }; 
+
+
+    //raw routes
+    const _routes = [
+      {
+        "component": () => Fallback,
+        "options": {
+          "preload": false,
+          "precache-order": false,
+          "precache-proximity": true,
+          "recursive": true
+        },
+        "isIndex": false,
+        "isFallback": true,
+        "hasParam": false,
+        "path": "/_fallback",
+        "layouts": [
+          layouts['/_layout']
+        ]
+      },
+      {
+        "component": () => Dashboard,
+        "options": {
+          "preload": false,
+          "precache-order": false,
+          "precache-proximity": true,
+          "recursive": true
+        },
+        "isIndex": false,
+        "isFallback": false,
+        "hasParam": false,
+        "path": "/dashboard",
+        "layouts": [
+          layouts['/_layout']
+        ]
+      },
+      {
+        "component": () => Example,
+        "options": {
+          "preload": false,
+          "precache-order": false,
+          "precache-proximity": true,
+          "recursive": true
+        },
+        "isIndex": false,
+        "isFallback": false,
+        "hasParam": false,
+        "path": "/example",
+        "layouts": [
+          layouts['/_layout']
+        ]
+      },
+      {
+        "component": () => Pages,
+        "options": {
+          "preload": false,
+          "precache-order": false,
+          "precache-proximity": true,
+          "recursive": true
+        },
+        "isIndex": true,
+        "isFallback": false,
+        "hasParam": false,
+        "path": "/index",
+        "layouts": [
+          layouts['/_layout']
+        ]
+      },
+      {
+        "component": () => Login,
+        "options": {
+          "preload": false,
+          "precache-order": false,
+          "precache-proximity": true,
+          "recursive": true
+        },
+        "isIndex": false,
+        "isFallback": false,
+        "hasParam": false,
+        "path": "/login",
+        "layouts": [
+          layouts['/_layout']
+        ]
+      }
     ];
+
+    //routes
+    const routes = buildRoutes(_routes);
 
     /* src/App.svelte generated by Svelte v3.16.7 */
 
@@ -7276,7 +7330,7 @@ var app = (function () {
     }
 
     const app = new App({
-    	target: document.body
+      target: document.body
     });
 
     return app;

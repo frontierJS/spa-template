@@ -1,6 +1,6 @@
 <script>
-    import { auth, currentUser } from 'frontier-frontend'
-    import { goto, isActive } from '@sveltech/routify';
+    import { auth, currentUser } from '@frontierjs/frontend'
+    import { goto, isActive } from '$router';
 
     import Header from '$c/Header.svelte';
     import Footer from '$c/Footer.svelte';
