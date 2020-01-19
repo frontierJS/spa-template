@@ -12,7 +12,7 @@ import sass from 'node-sass';
 const production = !process.env.ROLLUP_WATCH;
 const isProduction = process.env.BUILD === 'production';
 
-let apiUrl = isProduction ? 'https://auth.knight.works' : 'http://localhost:3001'
+let apiUrl = 'http://localhost:3001/api/v1'
 
 export default {
 	input: 'src/main.js',
@@ -24,10 +24,8 @@ export default {
 	},
 	plugins: [
         replace({ 
-            __AUTH_URL__: 'https://auth.knight.works/api/v1/login', 
-            // TODO: Clean this up
-            // __AUTH_URL__: 'http://localhost:3001/api/v1/login', 
-            __API_URL__:  apiUrl + '/api/v1', 
+            __AUTH_URL__: apiUrl + '/login', 
+            __API_URL__:  apiUrl, 
         }),
         alias({
             entries: [
