@@ -3,7 +3,7 @@
 </script>
 
 <svelte:head>
-    <title>Admin App</title>
+    <title>FrontierJS</title>
 </svelte:head>
 
 <style>
