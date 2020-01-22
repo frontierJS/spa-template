@@ -7,8 +7,8 @@
     "dev": "run-p watch:routify watch:rollup",
     "watch:rollup": "rollup -c -w",
     "watch:routify": "routify",
-    "start": "sirv public --single",
-    "css-dev": "node-sass --watch --recursive --output public/css --source-map true --source-map-contents scss",
+    "start": "sirv dist --single",
+    "css-dev": "node-sass --watch --recursive --output dist/css --source-map true --source-map-contents scss",
     "watch:css": "css-dev"
   },
   "devDependencies": {
