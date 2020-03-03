@@ -15,7 +15,7 @@ const isProduction = process.env.BUILD === 'production';
 let apiUrl = 'http://localhost:3001/api/v1'
 
 export default {
-	input: 'src/main.js',
+	input: 'src/index.js',
 	output: {
 		sourcemap: true,
 		format: 'iife',
