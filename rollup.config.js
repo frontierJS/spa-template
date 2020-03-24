@@ -6,13 +6,28 @@ import livereload from 'rollup-plugin-livereload';
 import { terser } from 'rollup-plugin-terser';
 import alias from '@rollup/plugin-alias';
 import replace from '@rollup/plugin-replace';
+import sveltePreprocess from 'svelte-preprocess';
 import sass from 'node-sass';
 
 
-const production = !process.env.ROLLUP_WATCH;
-const isProduction = process.env.BUILD === 'production';
+const production = !process.env.ROLLUP_WATCH
+const productionSite = 'frontier.js'
+const port = 3000
 
-let apiUrl = 'http://localhost:3001/api/v1'
+let apiUrl = production
+  ? `https://${productionSite}/api/v1`
+  : `http://localhost:${port}/api/v1`
+// let authUrl = production ? `https://${productionSite}/api/v1` : `http://localhost:${port}/api/v1`
+let authUrl = 'https://auth.knight.works/api/v1
+
+const preprocess = sveltePreprocess({
+  scss: {
+    includePaths: ['src']
+  },
+  postcss: {
+    plugins: [require('autoprefixer')]
+  }
+})
 
 export default {
 	input: 'src/index.js',
@@ -44,6 +59,15 @@ export default {
 			css: css => {
 				css.write('dist/build/bundle.css');
 			},
+      preprocess: sveltePreprocess({
+        scss: {
+          includePaths: ['src']
+        },
+        postcss: {
+          plugins: [require('autoprefixer')]
+        }
+      })
+      /*
 			preprocess: {
 				style: ({ content, attributes }) => {
 					if (attributes.type !== 'text/scss') return;
@@ -64,7 +88,7 @@ export default {
 						});
 					});
 				}
-			}
+			}*/
 
 		}),
 
