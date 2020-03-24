@@ -1,14 +1,13 @@
 import * as path from 'path'
-import svelte from 'rollup-plugin-svelte';
-import resolve from '@rollup/plugin-node-resolve';
-import commonjs from 'rollup-plugin-commonjs';
-import livereload from 'rollup-plugin-livereload';
-import { terser } from 'rollup-plugin-terser';
-import alias from '@rollup/plugin-alias';
-import replace from '@rollup/plugin-replace';
-import sveltePreprocess from 'svelte-preprocess';
-import sass from 'node-sass';
-
+import svelte from 'rollup-plugin-svelte'
+import resolve from '@rollup/plugin-node-resolve'
+import commonjs from 'rollup-plugin-commonjs'
+import livereload from 'rollup-plugin-livereload'
+import { terser } from 'rollup-plugin-terser'
+import alias from '@rollup/plugin-alias'
+import replace from '@rollup/plugin-replace'
+import sveltePreprocess from 'svelte-preprocess'
+import sass from 'node-sass'
 
 const production = !process.env.ROLLUP_WATCH
 const productionSite = 'frontier.js'
@@ -18,47 +17,38 @@ let apiUrl = production
   ? `https://${productionSite}/api/v1`
   : `http://localhost:${port}/api/v1`
 // let authUrl = production ? `https://${productionSite}/api/v1` : `http://localhost:${port}/api/v1`
-let authUrl = 'https://auth.knight.works/api/v1
-
-const preprocess = sveltePreprocess({
-  scss: {
-    includePaths: ['src']
-  },
-  postcss: {
-    plugins: [require('autoprefixer')]
-  }
-})
+let authUrl = 'https://auth.knight.works/api/v1'
 
 export default {
-	input: 'src/index.js',
-	output: {
-		sourcemap: true,
-		format: 'iife',
-		name: 'app',
-		file: 'dist/build/bundle.js'
-	},
-	plugins: [
-        replace({ 
-            __AUTH_URL__: apiUrl + '/login', 
-            __API_URL__:  apiUrl, 
-        }),
-        alias({
-            entries: [
-                { find: '$p', replacement: 'src/pages' },
-                { find: '$c', replacement: 'src/components' },
-                { find: '$frontier', replacement: '@frontierjs/frontend' },
-                { find: '$frontier-c', replacement: '@frontierjs/frontend/components' },
-                { find: '$router', replacement: '@sveltech/routify' }
-            ]
-        }),
-		svelte({
-			// enable run-time checks when not in production
-			dev: !production,
-			// we'll extract any component CSS out into
-			// a separate file — better for performance
-			css: css => {
-				css.write('dist/build/bundle.css');
-			},
+  input: 'src/index.js',
+  output: {
+    sourcemap: true,
+    format: 'iife',
+    name: 'app',
+    file: 'dist/build/bundle.js'
+  },
+  plugins: [
+    replace({
+      __AUTH_URL__: apiUrl + '/login',
+      __API_URL__: apiUrl
+    }),
+    alias({
+      entries: [
+        { find: '$p', replacement: 'src/pages' },
+        { find: '$c', replacement: 'src/components' },
+        { find: '$frontier', replacement: '@frontierjs/frontend' },
+        { find: '$frontier-c', replacement: '@frontierjs/frontend/components' },
+        { find: '$router', replacement: '@sveltech/routify' }
+      ]
+    }),
+    svelte({
+      // enable run-time checks when not in production
+      dev: !production,
+      // we'll extract any component CSS out into
+      // a separate file — better for performance
+      css: css => {
+        css.write('dist/build/bundle.css')
+      },
       preprocess: sveltePreprocess({
         scss: {
           includePaths: ['src']
@@ -89,50 +79,50 @@ export default {
 					});
 				}
 			}*/
+    }),
 
-		}),
+    // If you have external dependencies installed from
+    // npm, you'll most likely need these plugins. In
+    // some cases you'll need additional configuration —
+    // consult the documentation for details:
+    // https://github.com/rollup/rollup-plugin-commonjs
+    resolve({
+      browser: true,
+      dedupe: importee =>
+        importee === 'svelte' || importee.startsWith('svelte/')
+    }),
+    commonjs(),
 
-		// If you have external dependencies installed from
-		// npm, you'll most likely need these plugins. In
-		// some cases you'll need additional configuration —
-		// consult the documentation for details:
-		// https://github.com/rollup/rollup-plugin-commonjs
-		resolve({
-			browser: true,
-			dedupe: importee => importee === 'svelte' || importee.startsWith('svelte/')
-		}),
-		commonjs(),
+    // In dev mode, call `npm run start` once
+    // the bundle has been generated
+    !production && serve(),
 
-		// In dev mode, call `npm run start` once
-		// the bundle has been generated
-		!production && serve(),
+    // Watch the `dist` directory and refresh the
+    // browser on changes when not in production
+    !production && livereload('dist'),
 
-		// Watch the `dist` directory and refresh the
-		// browser on changes when not in production
-		!production && livereload('dist'),
-
-		// If we're building for production (npm run build
-		// instead of npm run dev), minify
-		production && terser()
-	],
-	watch: {
-		clearScreen: false
-	}
-};
+    // If we're building for production (npm run build
+    // instead of npm run dev), minify
+    production && terser()
+  ],
+  watch: {
+    clearScreen: false
+  }
+}
 
 function serve() {
-	let started = false;
+  let started = false
 
-	return {
-		writeBundle() {
-			if (!started) {
-				started = true;
+  return {
+    writeBundle() {
+      if (!started) {
+        started = true
 
-				require('child_process').spawn('npm', ['run', 'start', '--', '--dev'], {
-					stdio: ['ignore', 'inherit', 'inherit'],
-					shell: true
-				});
-			}
-		}
-	};
+        require('child_process').spawn('npm', ['run', 'start', '--', '--dev'], {
+          stdio: ['ignore', 'inherit', 'inherit'],
+          shell: true
+        })
+      }
+    }
+  }
 }
