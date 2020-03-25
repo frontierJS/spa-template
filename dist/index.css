@@ -1,41 +1,158 @@
 /* ==========================================================================
-  Stylesheet for Remnant
-  ITCSS + BEM
+   Stylesheet for FrontierJS
+   ITCSS + BEM
    ========================================================================== */
-/* Settings: preprocessor variables, colors, global settings
+/* Settings: preprocessor variables, colors, global settings, breakpoints
    ========================================================================== */
 /* ==========================================================================
   Settings: Colors
   Only define colors here. Don't use sass color functions, stick to hex values,
   or the color component in styleguide won't regenerate automatically anymore.
  ========================================================================== */
-/* Grays
+/* Grays - Defaults for any project
  ========================================================================== */
 /* Key colors
   ========================================================================== */
-/* Repeat color variables for semantic mapping
-   For example, you can use this file to globally change the colors of primary buttons and links;
-  these are usually mapped to $color-primary at the component level.
+/* ==========================================================================
+  Theme Colors:
 
-  This is in a separate file because _settings.color.scss is being used to generate documentation
-  about the colors, and we technically cannot read variables that reference other variables.
+  Once colors are defined, use _c-semantic-colors 
+  to define primary, secondary, etc
  ========================================================================== */
 /* ==========================================================================
+   Repeat color variables for semantic mapping
+   For example, you can use this file to globally change the colors
+   of primary buttons and links;
+   these are usually mapped to $color-primary at the component level.
+
+   This is in a separate file because _s-color.scss is
+   being used to generate documentation
+   about the colors, and we technically 
+   cannot read variables that reference other variables.
+ ========================================================================== */
+/* Example
+* You can use @include bp({start}, {stop})
+* or an single breakpoint @include sm({stop})
+
+
+.example {
+  @include bl(sec) {
+    
+  }
+   @include xs(md) {
+    .item {
+      background-color: blue;
+    }
+  }
+  @include md(xl) {
+    .item {
+      background-color: green;
+    }
+  }
+   @include xl {
+    .item {
+      background-color: red;
+    }
+  }
+}
+
+@mixin site-layout() {
+  //DEFAULT
+  display: flex;
+  flex-flow: column;
+  .links {
+    display: none;
+  }
+
+  // XXS
+  @include xxs { }
+  // XS
+  @include xs { }
+
+  // SM
+  @include sm {
+    display: grid;
+    grid: [start] 1fr [end] / [start] 
+      repeat(auto-fit, minmax($block, 1fr)) [end]; 
+    
+    .search {
+      grid-column: start / span 2;
+    }
+    .footer {
+      grid-column: start / end;
+    }
+    .links {
+      display: block;
+      @include g-span;
+    }
+    .content {
+      @include g-span(3, end);
+    }
+  }
+
+  // MD
+  @include md {
+    .content {
+      @include g-span(3, -2);
+    }
+    .links {
+      @include g-span(-2, -1);
+    }
+  }
+
+  // ML
+  @include ml { }
+  // LG
+  @include lg { }
+  // XL
+  @include xl { }
+  // XXL
+  @include xxl { }
+  
+}
+
+.app {
+  height: 100%;
+  font-size: 22px;
+  @include template;
+  @include site-layout;
+}
+
+*/
+/* ==========================================================================
    Variables
-   -Fonts
-   -Colors ref: pg 139 of color pallete
-   -Breakponts
+   - Fonts
+   - Padding
+   - Margin
+   - Borders
+   - Box Shadows
+
    ---
    Global SCSS variables (override default values defined in component files)
    ========================================================================== */
-/* Typography
-   ========================================================================== */
-/* Colors
-   ========================================================================== */
 /* Breakpoints
+   ========================================================================== */
+/* Typography
    ========================================================================== */
 /* General
    ========================================================================== */
+/************************** need systems for these
+Font size
+Font weight
+Line height
+Margin
+Padding
+Width
+Height
+
+/*
+Box shadows
+*/
+/*
+Border radius
+Border width
+Opacity
+***********************/
 /* Generic: CSS reset, box-sizing, global CSS tweaks
    ========================================================================== */
 /* http://meyerweb.com/eric/tools/css/reset/ 
@@ -107,13 +224,30 @@ input:invalid {
 
 html {
   font-size: 54.16%; }
-  @media (min-width: 900px) {
-    html {
-      font-size: 58.33%; } }
-  @media (min-width: 1200px) {
-    html {
-      font-size: 62.5%; } }
 
+@media (max-width: 2560px) and (min-width: 640px) {
+  html {
+    font-size: 56.25%; } }
+
+@media (max-width: 2560px) and (min-width: 768px) {
+  html {
+    font-size: 58.33%; } }
+
+@media (max-width: 2560px) and (min-width: 1024px) {
+  html {
+    font-size: 62.5%; } }
+
+/*
+html {
+  font-size: 54.16%; // 13px
+  @media (min-width: $sm) {
+    font-size: 58.33%; // 14px
+  }
+  @media (min-width: $md) {
+    font-size: 62.5%; // Base 10
+  }
+}
+*/
 body {
   font-family: "Nunito Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   font-size: 1.7rem;
@@ -141,9 +275,6 @@ a {
   color: #00549e;
   text-decoration: none; }
 
-sup {
-  font-size: .5rem; }
-
 em, i {
   font-style: italic; }
 
@@ -161,7 +292,7 @@ img {
   img {
     filter: brightness(0.9) contrast(1.1); } }
 
-/* Objects: layout-related CSS, grid, SVG icons frame, flexbox classes
+/* Objects/Containers: layout-related CSS, grid, SVG icons frame, flexbox classes
    ========================================================================== */
 /* ==========================================================================
     Object: Container
@@ -190,7 +321,7 @@ img {
   max-width: 118rem; }
 
 /* ==========================================================================
-  Container vertical
+   Container vertical
    ========================================================================== */
 /* Block spacing
    ========================================================================== */
@@ -445,6 +576,8 @@ img {
 .o-grid--reverse {
   flex-direction: row-reverse; }
 
+/* Block level */
+/* Helpers */
 /* Components: separately styled components (buttons, form inputs, toolbars...)
    ========================================================================== */
 /* ==========================================================================
@@ -472,29 +605,34 @@ img {
 /* ==========================================================================
   c-btn
    ========================================================================== */
-button, .c-btn {
+button,
+.c-btn {
   white-space: nowrap;
   display: inline-block;
-  color: #ffe9b3;
+  color: #f9f9f9;
   text-decoration: none;
   background: #555555;
-  padding: 1rem 1.4rem;
+  padding: 0.4rem 1.4rem;
   font-size: 1.6rem;
   font-weight: 800;
-  border: 1px solid #222222; }
+  border: none; }
   @media (prefers-color-scheme: dark) {
-    button, .c-btn {
-      color: #FFF; } }
-  @media (prefers-color-scheme: dark) {
-    button, .c-btn {
+    button,
+    .c-btn {
       background: rgba(255, 255, 255, 0.2); } }
-  button:hover, button:focus, .c-btn:hover, .c-btn:focus {
-    background: rgba(0, 0, 0, 0.9);
+  button:hover, button:focus,
+  .c-btn:hover,
+  .c-btn:focus {
+    background: rgba(17, 17, 17, 0.9);
+    color: #fff;
     transition: 0.17s background ease-in-out; }
     @media (prefers-color-scheme: dark) {
-      button:hover, button:focus, .c-btn:hover, .c-btn:focus {
+      button:hover, button:focus,
+      .c-btn:hover,
+      .c-btn:focus {
         background: rgba(255, 255, 255, 0.4); } }
-  button--lg, .c-btn--lg {
+  button--lg,
+  .c-btn--lg {
     padding: 1.4rem 2.1rem;
     font-size: 1.9rem; }
 
@@ -511,59 +649,6 @@ button, .c-btn {
    ========================================================================== */
 .c-btn-toolbar .c-btn + .c-btn {
   margin-left: 0.8rem; }
-
-/* ==========================================================================
-  c-album-cards
-  ---
-  Used for albums layout
-   ========================================================================== */
-.c-album-cards {
-  display: grid;
-  margin: 0 0 2.4rem;
-  grid-gap: 2.4rem;
-  grid-template-columns: repeat(auto-fit, minmax(4.8rem, 1fr)); }
-  @media (min-width: 900px) {
-    .c-album-cards {
-      grid-gap: 6.4rem; } }
-
-/* ==========================================================================
-  c-album-card
-   ========================================================================== */
-.c-album-card {
-  text-align: center;
-  grid-column-end: span 4; }
-  @media (min-width: 900px) {
-    .c-album-card {
-      grid-column-end: span 3; } }
-
-.c-album-card__heading {
-  font-size: 1.6rem;
-  font-weight: 500;
-  color: #000;
-  margin: 0 0 0.4rem; }
-  @media (prefers-color-scheme: dark) {
-    .c-album-card__heading {
-      color: #FFF; } }
-
-.c-album-card__body {
-  padding: 1.6rem; }
-
-.c-album-card__meta {
-  opacity: 0.6;
-  margin: 0.3rem 0;
-  text-transform: uppercase;
-  font-size: 1.3rem; }
-
-.c-album-card__category {
-  display: inline-block;
-  border-radius: 1.6rem;
-  padding: 0.2rem 0.8rem;
-  margin: 0.4rem;
-  font-size: 1.2rem;
-  background: rgba(0, 0, 0, 0.15); }
-  @media (prefers-color-scheme: dark) {
-    .c-album-card__category {
-      background: rgba(255, 255, 255, 0.15); } }
 
 /* ==========================================================================
    Categories nav 
@@ -884,9 +969,14 @@ button, .c-btn {
 .c-sticky-footer-layout__item-inner-center {
   margin: auto; }
 
-/* Forms */
 /* ==========================================================================
-  c-form
+  c-forms, fieldsets, controls, labels, inputs
+  structure of form field component:
+  form >
+    fieldset.field >
+        div.control >
+            input
+            label
    ========================================================================== */
 form:invalid button {
   border: 1px solid #eee;
@@ -897,9 +987,20 @@ form:invalid button {
   -o-transition: all 0.3s ease-out;
   transition: all 0.3s ease-out; }
 
+select.invalid:invalid, input.invalid:invalid {
+  background: rgba(240, 64, 0, 0.1);
+  transition: all, 4s, ease-out; }
+
 /* ==========================================================================
   c-fieldset
    ========================================================================== */
+fieldset .error {
+  font-weight: 200;
+  font-size: .8em;
+  font-style: italic;
+  margin-top: 5px;
+  color: color(danger); }
+
 fieldset, .field {
   padding-bottom: .6em; }
 
@@ -920,20 +1021,18 @@ input, .input {
   background-color: #fff;
   transition: all 0.3s ease-out;
   margin-top: 20px;
-  padding-left: 6px;
-  border-right: 2px solid transparent; }
+  padding-left: 6px; }
   input:focus, .input:focus {
-    border-right: 2px solid #775117;
     outline: 0; }
   input:required::placeholder, .input:required::placeholder {
-    color: #4d340e; }
+    color: #eee; }
 
 label {
   position: absolute;
   font-size: 14px;
   top: 5px;
   left: 4px;
-  color: #775117; }
+  color: #222; }
 
 input:invalid {
   background: rgba(207, 163, 19, 0.1); }
@@ -945,15 +1044,14 @@ input:not(:placeholder-shown) + label {
   opacity: 1;
   display: block;
   position: absolute;
-  color: #775117;
+  color: #222;
   -webkit-transition: opacity 0.3s ease-out;
   -moz-transition: opacity 0.3s ease-out;
   -o-transition: opacity 0.3s ease-out;
   transition: opacity 0.3s ease-out; }
   input:not(:placeholder-shown) + label::after {
     content: ' *';
-    color: #222;
-    font-size: .5rem; }
+    color: #222; }
 
 input:not(:placeholder-shown):invalid {
   background: rgba(207, 19, 19, 0.1);
@@ -961,6 +1059,10 @@ input:not(:placeholder-shown):invalid {
   -moz-transition: all 4s ease-out;
   -o-transition: all 4s ease-out;
   transition: all 4s ease-out; }
+
+select.invalid:invalid, input.invalid:invalid {
+  background: rgba(240, 64, 0, 0.1);
+  transition: all, 4s, ease-out; }
 
 /* Buttons */
 /* Utilities: specific helper classes, overrides
@@ -1099,8 +1201,7 @@ input:not(:placeholder-shown):invalid {
 .u-d-block {
   display: block; }
 
-@media (max-width: 900px) {
-  .c-two-col__image {
-    margin-bottom: 1.2rem; } }
+.test {
+  border: black; }
 
-/*# sourceMappingURL=main.css.map */
+/*# sourceMappingURL=index.css.map */
