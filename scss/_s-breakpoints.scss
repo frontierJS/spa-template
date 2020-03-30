@@ -1,0 +1,236 @@
+$unit: 1rem;
+$block: $unit * 8;
+
+$bl: $block;
+$sec: $block * 2;
+$xxs: $block * 3;
+$xs: $block * 4;
+$sm: $block * 5;
+$md: $block * 6;
+$lm: $block * 7;
+$lg: $block * 8;
+$xl: $block * 9;
+$xxl: $block * 10;
+$huge: $block * 20;
+
+$bps: (
+  'bl': $bl,
+  'sec': $sec,
+  'xxs': $xxs,
+  'xs': $xs,
+  'sm': $sm,
+  'md': $md,
+  'lm': $lm,
+  'lg': $lg,
+  'xl': $xl,
+  'xxl': $xxl,
+  'huge': $huge
+);
+
+// Core Mixins
+@mixin g-span($start: start, $end: end) {
+  grid-column-start: $start;
+  grid-column-end: $end;
+}
+
+@mixin min-bp($bp) {
+  @if map-has-key($bps, $bp) {
+    @media (min-width: #{map-get($bps, $bp)}) {
+      @content;
+    }
+  } @else {
+    @warn "Unfortunately, no value could be retrieved from `#{$bp}`. "
+        + "Please make sure it is defined in `$breakpoints` map.";
+  }
+}
+
+@mixin max-bp($bp) {
+  @if map-has-key($bps, $bp) {
+    @media (max-width: #{map-get($bps, $bp)}) {
+      @content;
+    }
+  } @else {
+    @warn "Unfortunately, no value could be retrieved from `#{$bp}`. "
+        + "Please make sure it is defined in `$breakpoints` map.";
+  }
+}
+
+@mixin bp($start, $stop: huge) {
+  @include max-bp($stop) {
+    @include min-bp($start) {
+      @content;
+    }
+  }
+}
+
+// Child Mixins
+@mixin bl($stop: huge) {
+  @include bp(bl, $stop) {
+    @content;
+  }
+}
+@mixin sec($stop: huge) {
+  @include bp(sec, $stop) {
+    @content;
+  }
+}
+@mixin xxs($stop: huge) {
+  @include bp(xxs, $stop) {
+    @content;
+  }
+}
+@mixin xs($stop: huge) {
+  @include bp(xs, $stop) {
+    @content;
+  }
+}
+@mixin sm($stop: huge) {
+  @include bp(sm, $stop) {
+    @content;
+  }
+}
+@mixin md($stop: huge) {
+  @include bp(md, $stop) {
+    @content;
+  }
+}
+@mixin lm($stop: huge) {
+  @include bp(lm, $stop) {
+    @content;
+  }
+}
+@mixin lg($stop: huge) {
+  @include bp(lg, $stop) {
+    @content;
+  }
+}
+@mixin xl($stop: huge) {
+  @include bp(xl, $stop) {
+    @content;
+  }
+}
+@mixin xxl($stop: huge) {
+  @include bp(xxl, $stop) {
+    @content;
+  }
+}
+
+@mixin debug-bps {
+  .debug {
+    border: 3px solid violet;
+    @include xxs {
+      border: 3px solid green;
+    }
+    @include xs {
+      border: 3px solid red;
+    }
+    @include sm {
+      border: 3px solid orange;
+    }
+    @include md {
+      border: 3px solid yellow;
+    }
+    @include lm {
+      border: 3px solid green;
+    }
+    @include lg {
+      border: 3px solid blue;
+    }
+    @include xl {
+      border: 3px solid indigo;
+    }
+    @include xxl {
+      border: 3px solid violet;
+    }
+  }
+}
+
+/* Example
+* You can use @include bp({start}, {stop})
+* or an single breakpoint @include sm({stop})
+
+
+.example {
+  @include bl(sec) {
+    
+  }
+   @include xs(md) {
+    .item {
+      background-color: blue;
+    }
+  }
+  @include md(xl) {
+    .item {
+      background-color: green;
+    }
+  }
+   @include xl {
+    .item {
+      background-color: red;
+    }
+  }
+}
+
+@mixin site-layout() {
+  //DEFAULT
+  display: flex;
+  flex-flow: column;
+  .links {
+    display: none;
+  }
+
+  // XXS
+  @include xxs { }
+  // XS
+  @include xs { }
+
+  // SM
+  @include sm {
+    display: grid;
+    grid: [start] 1fr [end] / [start] 
+      repeat(auto-fit, minmax($block, 1fr)) [end]; 
+    
+    .search {
+      grid-column: start / span 2;
+    }
+    .footer {
+      grid-column: start / end;
+    }
+    .links {
+      display: block;
+      @include g-span;
+    }
+    .content {
+      @include g-span(3, end);
+    }
+  }
+
+  // MD
+  @include md {
+    .content {
+      @include g-span(3, -2);
+    }
+    .links {
+      @include g-span(-2, -1);
+    }
+  }
+
+  // ML
+  @include ml { }
+  // LG
+  @include lg { }
+  // XL
+  @include xl { }
+  // XXL
+  @include xxl { }
+  
+}
+
+.app {
+  height: 100%;
+  font-size: 22px;
+  @include template;
+  @include site-layout;
+}
+
+*/

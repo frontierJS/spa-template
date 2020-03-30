@@ -29,7 +29,7 @@ export default {
   },
   plugins: [
     replace({
-      __AUTH_URL__: apiUrl + '/login',
+      __AUTH_URL__: authUrl + '/login',
       __API_URL__: apiUrl
     }),
     alias({

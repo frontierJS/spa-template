@@ -5,19 +5,21 @@
 
 /* Settings: preprocessor variables, colors, global settings
    ========================================================================== */
-
+@import '_s-colors';
+// @import '_s-semantic-colors';
+@import '_s-breakpoints';
+// @import '_s-variables';
 
 /* Generic: CSS reset, box-sizing, global CSS tweaks
    ========================================================================== */
-
+// Import reset.css
+@import '_reset.scss';
 
 /* Elements: element selectors, CMS-generated content
    ========================================================================== */
 
-
 /* Objects: layout-related CSS, grid, SVG icons frame, flexbox classes
    ========================================================================== */
-
 
 /* Components: separately styled components (buttons, form inputs, toolbars...)
    ========================================================================== */
@@ -30,3 +32,434 @@
 
 /* Utilities: specific helper classes, overrides
    ========================================================================== */
+@function sqrt($r) {
+  $x0: 1;
+  $x1: $x0;
+
+  @for $i from 1 through 10 {
+    $x1: $x0 - ($x0 * $x0 - abs($r)) / (2 * $x0);
+    $x0: $x1;
+  }
+
+  @return $x1;
+}
+
+/*
+What about word wrap?
+   What do br and hr do ??
+   what about an aside?? what if asides have display none at certian media queries
+   Defaults change relative to the breakpoints so for example:
+   $default-margin: 10%;
+   as we get bigger
+   @include md {
+      $default-margin: 12%;
+   }
+   Most importantly!!
+   I want a methodology for styling
+   a way to think about it so I don't have to think about it
+Containing things (including modals maybe?)
+Lists
+Key Elements
+- Lists
+- Tables
+- Links
+- Buttons
+- Inputs (Selects and Checkboxes)
+Text Content
+- Headers
+- Bodys
+Variables
+- Fonts
+- Colors
+- Standard Sizings (padding, margins, breakpoints)
+*/
+
+/* Blocks/Containers - Containing things (including modals maybe?)
+   Will be display:block for the most part
+    <article> 
+    <div>
+    <section>
+    <nav> 
+   ========================================================================== */
+
+/* Content / Elements
+   ========================================================================== */
+
+/* Text Blocks:
+   Examples of block-level elements:
+    <h1> - <h6>
+    <form>
+    <header>
+    <footer>
+   ========================================================================== */
+
+/* Text:
+   <span> | Inline-block | Use when you want no style applied but need to group nodes together 
+   <p> | block |  Use when you want no style but display: block
+   Things we are about text from here:
+   - padding
+   - margin : right and bottom
+   - border ?
+   ========================================================================== */
+@mixin blockObjects() {
+  section,
+  div,
+  article,
+  header,
+  footer,
+  nav {
+    display: block;
+    @content;
+  }
+}
+@mixin contentObjects() {
+  //header, footer form?
+  p,
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    display: block;
+    @content;
+  }
+}
+@mixin textObjects() {
+  span,
+  input,
+  img,
+  button,
+  a {
+    display: inline-block;
+    @content;
+  }
+}
+//Master Layout
+//Display
+//TODO: add hide/show at different breakpoints
+//Breakpoints
+//Overflow
+//Position
+//
+$d-box-sizing: border-box;
+//Grid
+//Flex
+@mixin flex() {
+  .flex,
+  article {
+    display: flex;
+    flex-flow: column wrap;
+    justify-content: center;
+    align-items: center;
+    &.flex-start {
+      justify-content: flex-start;
+    }
+    &.space-between {
+      justify-content: space-between;
+    }
+    &.space-around {
+      justify-content: space-around;
+    }
+    &.align-start {
+      align-items: start;
+    }
+    &.align-end {
+      align-items: end;
+    }
+    &.row {
+      flex-direction: row;
+    }
+    &.no-wrap {
+      flex-wrap: nowrap;
+    }
+    &.stretch-all {
+      align-items: stretch;
+    }
+    &.grow-all > * {
+      flex: 1 1 auto;
+    }
+    //Alias for stretch and grow
+    &.fill-all {
+      align-items: stretch;
+      > * {
+        flex: 1 1 auto;
+      }
+    }
+    //This section and nav overwrite might be an anit-pattern
+    & > section,
+    & > nav {
+      align-self: stretch;
+    }
+    & > * {
+      &.baseline {
+        align-self: baseline;
+      }
+
+      &.stretch {
+        align-self: stretch;
+      }
+      &.grow {
+        flex-grow: 1;
+      }
+      //Alias for stretch and grow
+      &.fill {
+        align-self: stretch;
+        flex-grow: 1;
+      }
+    }
+  }
+}
+//Padding
+$d-padding: 1.5em;
+$d-padding-x: $d-padding;
+$d-padding-y: $d-padding * 2;
+.p {
+  padding: $d-padding-x $d-padding-y;
+}
+.pr {
+  padding-right: $d-padding-x;
+}
+.pl {
+  padding-left: $d-padding-x;
+}
+.p-none {
+  padding: 0;
+}
+.p-x {
+  padding-left: $d-padding-x;
+  padding-right: $d-padding-x;
+}
+
+.p-y {
+  padding-top: $d-padding-y;
+  padding-bottom: $d-padding-y;
+}
+//Margins
+$d-margin: 1rem;
+$d-margin-x: $d-margin;
+$d-margin-y: $d-margin * 2;
+.m {
+  margin: $d-margin-x $d-margin-y;
+}
+.m-auto {
+  margin: auto;
+}
+.m-none {
+  margin: 0;
+}
+.mt {
+  margin-top: $d-margin-x;
+}
+.mb {
+  margin-bottom: $d-margin-x;
+}
+.ml {
+  margin-left: $d-margin-y;
+}
+.mr {
+  margin-right: $d-margin-y;
+}
+.mt-auto {
+  margin-top: auto;
+}
+.mb-auto {
+  margin-bottom: auto;
+}
+.ml-auto {
+  margin-left: auto;
+}
+.mr-auto {
+  margin-right: auto;
+}
+.mx {
+  margin-left: $d-margin-x;
+  margin-right: $d-margin-x;
+}
+.mx-auto {
+  margin-left: auto;
+  margin-right: auto;
+}
+.my {
+  margin-top: $d-margin-y;
+  margin-bottom: $d-margin-y;
+}
+.my-auto {
+  margin-top: auto;
+  margin-bottom: auto;
+}
+//Flexbox
+//Sizing
+//Width - min max
+//Height - min max
+//Grid
+//Border
+$d-color-black: #222222;
+$d-border-color: $d-color-black;
+$d-border: 1px solid $d-border-color;
+
+.border {
+  border: $d-border;
+}
+.border-none {
+  border: none;
+}
+
+/************************** need systems for these
+Font weight
+Width
+Height
+Border radius
+Opacity
+***********************/
+//Text-Align
+$d-text-align: center;
+//Box Shadows
+$d-box-shadow: 0 1px 3px hsla(0, 0, 0, 0.12);
+//Font Size
+$d-font-size: 0.75rem;
+@mixin font-size($mult: 1) {
+  &.xxs {
+    font-size: 0.5rem * $mult;
+  }
+  &.xs {
+    font-size: 0.75rem * $mult;
+  }
+  &.sm {
+    font-size: 0.875rem * $mult;
+  }
+  &.md {
+    font-size: 1rem * $mult;
+  }
+  &.lm {
+    font-size: 1.25rem * $mult;
+  }
+  &.lg {
+    font-size: 1.5rem * $mult;
+  }
+  &.xl {
+    font-size: 2rem * $mult;
+  }
+  &.xxl {
+    font-size: 3rem * $mult;
+  }
+}
+
+// Lists
+$d-list-style-type: none;
+//Line Height
+$d-line-height: 1.5; // at 1rem of 16px, that gives a line of 24px
+.line-h-1 {
+  line-height: 1;
+}
+.line-h {
+  line-height: $d-line-height;
+}
+.line-h-2 {
+  line-height: 2;
+}
+
+//Misc
+.db {
+  border: 1px solid red;
+  .db {
+    margin: 1px;
+    border: 1px solid blue;
+  }
+}
+$default-height: 1rem * 4;
+$default-width: 1rem * 8;
+
+//Defaults for Elements
+$d-link-color: $dark-blue;
+$d-link-hover-color: $light-blue;
+$d-main-height: 99vh;
+$d-button-color: #fff;
+$d-button-background-color: blue;
+$d-button-hover-background-color: violet;
+$d-button-color-secondary: grey;
+$d-button-padding: $d-padding-x $d-padding-y;
+main {
+  height: $d-main-height;
+}
+button {
+  font-size: inherit;
+  font-weight: bold;
+  background-color: $d-button-background-color;
+  color: $d-button-color;
+  padding: $d-button-padding;
+  &:hover {
+    background-color: $d-button-hover-background-color;
+  }
+}
+
+// Inputs
+input,
+textarea,
+.select select {
+  line-height: 1.5;
+  margin: 0;
+  //height: 2.1em;
+  padding: 0.3em 0.6em;
+  border: 1px solid #ccc;
+  background-color: #fff;
+  border-radius: 0.2em;
+  transition: all 0.3s;
+  //width: 100%;
+  display: block;
+  margin-bottom: 20px;
+}
+a {
+  text-decoration: none;
+  color: $d-link-color;
+  &:hover {
+    color: $d-link-hover-color;
+  }
+}
+
+ul,
+ol,
+li {
+  //list-style: none;
+  //margin: 0;
+  //padding: 0;
+}
+@mixin font-settings {
+  font-size: $d-font-size;
+  line-height: $d-line-height;
+  @include md {
+    font-size: 0.875rem;
+  }
+  @include lg {
+    font-size: 1rem;
+  }
+}
+@mixin text-align() {
+  &.align {
+    text-align: $d-text-align;
+  }
+  &.left-align {
+    text-align: left;
+  }
+  &.right-align {
+    text-align: right;
+  }
+  &.center-align {
+    text-align: center;
+  }
+}
+// Combined Styles begin here
+html {
+  @include debug-bps;
+  @include blockObjects;
+  @include contentObjects {
+    @include font-size;
+    @include text-align;
+  }
+  @include textObjects {
+    @include font-size;
+    line-height: $d-line-height;
+  }
+  @include flex;
+  @include font-settings;
+}
