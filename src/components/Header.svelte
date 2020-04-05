@@ -21,7 +21,7 @@
     </header>
   {:else}
     <header>
-      <h1>FrontierJS</h1>
+      <h1>Header.svelte</h1>
     </header>
   {/if}
 </section>
