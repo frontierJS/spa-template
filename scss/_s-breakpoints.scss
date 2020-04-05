@@ -1,3 +1,5 @@
+@use "sass:math";
+
 $unit: 1rem;
 $block: $unit * 8;
 
@@ -55,9 +57,63 @@ $bps: (
   }
 }
 
+@mixin d-grid-display($bp) {
+  $bp-count: map-get($bps, $bp) / $block;
+  $bp-2: $block;
+  display: grid;
+  grid-template-columns: [start] repeat(auto-fit, minmax($bp-2, 1fr)) [end];
+  .gx-span-full {
+    grid-column-start: 1;
+    grid-column-end: -1;
+  }
+  .gx-span-1 {
+    grid-column: span 1;
+  }
+  .gx-span-2 {
+    grid-column: span 2;
+  }
+  .gx-span-3 {
+    grid-column: span 3;
+  }
+  .gx-span-4 {
+    grid-column: span 4;
+  }
+  .gx-span-half {
+    grid-column: span floor($bp-count / 2);
+  }
+  .gx-span-quarter {
+    grid-column: span floor($bp-count / 4);
+  }
+  .gx-span-eighth {
+    grid-column: span floor($bp-count / 8);
+  }
+}
+
+@mixin bp-utils($bp) {
+  .#{$bp}-display-none {
+    display: none;
+  }
+  .#{$bp}-display {
+    display: unset;
+  }
+  .#{$bp}-w-max {
+    max-width: #{map-get($bps, $bp)};
+  }
+  .#{$bp}-display-grid {
+    @include d-grid-display($bp);
+  }
+  .#{$bp}-font-size-smaller {
+    font-size: 0.8em;
+  }
+  .#{$bp}-font-size-larger {
+    font-size: 1.2em;
+  }
+}
+
 @mixin bp($start, $stop: huge) {
   @include max-bp($stop) {
     @include min-bp($start) {
+      @include bp-utils($start);
       @content;
     }
   }
@@ -115,32 +171,49 @@ $bps: (
   }
 }
 
-@mixin debug-bps {
-  .debug {
-    border: 3px solid violet;
+@mixin bps-debug-utils($bp, $color) {
+  $breakpoint: map-get($bps, $bp) / $block;
+  // $breakpoint: (map-get($bps, $bp) * 2);
+  // $breakpoint: 2 + 2;
+  border: 3px solid $color;
+  &::before {
+    background-color: $color;
+    display: block;
+    width: 100%;
+    content: '#{$bp}@min-width #{map-get($bps, $bp)}  -- #{$breakpoint} blocks wide';
+    grid-column: 1 / -1;
+  }
+}
+@mixin bps-debug {
+  .bps-debug {
+    @media (max-width: 370px) {
+      // Show that we don't need to size for this small
+      display: none;
+    }
+    border: 3px solid violet; //less than 385px
     @include xxs {
-      border: 3px solid green;
+      @include bps-debug-utils(xxs, green);
     }
     @include xs {
-      border: 3px solid red;
+      @include bps-debug-utils(xs, red);
     }
     @include sm {
-      border: 3px solid orange;
+      @include bps-debug-utils(sm, orange);
     }
     @include md {
-      border: 3px solid yellow;
+      @include bps-debug-utils(md, yellow);
     }
     @include lm {
-      border: 3px solid green;
+      @include bps-debug-utils(lm, green);
     }
     @include lg {
-      border: 3px solid blue;
+      @include bps-debug-utils(lg, blue);
     }
     @include xl {
-      border: 3px solid indigo;
+      @include bps-debug-utils(xl, indigo);
     }
     @include xxl {
-      border: 3px solid violet;
+      @include bps-debug-utils(xxl, violet);
     }
   }
 }
@@ -234,3 +307,25 @@ $bps: (
 }
 
 */
+
+@mixin site-layout {
+  .display-none {
+    display: none;
+  }
+  @include xxs {
+  }
+  @include xs {
+  }
+  @include sm {
+  }
+  @include md {
+  }
+  @include lm {
+  }
+  @include lg {
+  }
+  @include xl {
+  }
+  @include xxl {
+  }
+}

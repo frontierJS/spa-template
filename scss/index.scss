@@ -5,6 +5,14 @@
 
 /* Settings: preprocessor variables, colors, global settings
    ========================================================================== */
+@mixin css3-prefix($property, $value) {
+  -webkit-#{$property}: #{$value};
+  -khtml-#{$property}: #{$value};
+  -moz-#{$property}: #{$value};
+  -ms-#{$property}: #{$value};
+  -o-#{$property}: #{$value};
+  #{$property}: #{$value};
+}
 @import '_s-colors';
 // @import '_s-semantic-colors';
 @import '_s-breakpoints';
@@ -24,6 +32,8 @@
 /* Components: separately styled components (buttons, form inputs, toolbars...)
    ========================================================================== */
 
+// @import 'c-input';
+@import 'c-forms-inputs';
 /* Forms 
    ========== */
 
@@ -144,6 +154,10 @@ Variables
 //
 $d-box-sizing: border-box;
 //Grid
+.grid-all > * {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16px, 1fr));
+}
 //Flex
 @mixin flex() {
   .flex,
@@ -152,6 +166,10 @@ $d-box-sizing: border-box;
     flex-flow: column wrap;
     justify-content: center;
     align-items: center;
+    &.grid-all > * {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax($block, 1fr));
+    }
     &.flex-start {
       justify-content: flex-start;
     }
@@ -211,11 +229,44 @@ $d-box-sizing: border-box;
   }
 }
 //Padding
-$d-padding: 1.5em;
+$d-padding: 0.5em;
 $d-padding-x: $d-padding;
 $d-padding-y: $d-padding * 2;
 .p {
   padding: $d-padding-x $d-padding-y;
+}
+.p-xxs {
+  padding: ($d-padding-x * 0.25) ($d-padding-y * 0.25);
+}
+.p-xs {
+  padding: ($d-padding-x * 0.5) ($d-padding-y * 0.5);
+}
+.p-sm {
+  padding: ($d-padding-x * 0.75) ($d-padding-y * 0.75);
+}
+.p-md {
+  padding: ($d-padding-x * 1.25) ($d-padding-y * 1.25);
+}
+.p-lm {
+  padding: ($d-padding-x * 1.5) ($d-padding-y * 1.5);
+}
+.p-lm {
+  padding: ($d-padding-x * 2) ($d-padding-y * 2);
+}
+.p-lg {
+  padding: ($d-padding-x * 3) ($d-padding-y * 3);
+}
+.p-xl {
+  padding: ($d-padding-x * 4) ($d-padding-y * 4);
+}
+.p-xxl {
+  padding: ($d-padding-x * 6) ($d-padding-y * 6);
+}
+.pt {
+  padding-top: $d-padding-y;
+}
+.pb {
+  padding-bottom: $d-padding-y;
 }
 .pr {
   padding-right: $d-padding-x;
@@ -226,12 +277,12 @@ $d-padding-y: $d-padding * 2;
 .p-none {
   padding: 0;
 }
-.p-x {
+.px {
   padding-left: $d-padding-x;
   padding-right: $d-padding-x;
 }
 
-.p-y {
+.py {
   padding-top: $d-padding-y;
   padding-bottom: $d-padding-y;
 }
@@ -290,6 +341,19 @@ $d-margin-y: $d-margin * 2;
 }
 //Flexbox
 //Sizing
+//Containers
+.w-full {
+  width: 100%;
+}
+.h-full {
+  height: 100%;
+}
+.w-screen {
+  width: 100vw;
+}
+.h-screen {
+  height: 100vh;
+}
 //Width - min max
 //Height - min max
 //Grid
@@ -318,29 +382,36 @@ $d-text-align: center;
 $d-box-shadow: 0 1px 3px hsla(0, 0, 0, 0.12);
 //Font Size
 $d-font-size: 0.75rem;
+@mixin text-scale($prop, $scale) {
+  .#{$prop}-#{scale} {
+    $prop: $scale;
+  }
+}
 @mixin font-size($mult: 1) {
-  &.xxs {
+  // @include text-scale(padding-bottom, md);
+  // @include text-scale(font-size, xxs);
+  &.font-size-xxs {
     font-size: 0.5rem * $mult;
   }
-  &.xs {
+  &.font-size-xs {
     font-size: 0.75rem * $mult;
   }
-  &.sm {
+  &.font-size-sm {
     font-size: 0.875rem * $mult;
   }
-  &.md {
+  &.font-size-md {
     font-size: 1rem * $mult;
   }
-  &.lm {
+  &.font-size-lm {
     font-size: 1.25rem * $mult;
   }
-  &.lg {
+  &.font-size-lg {
     font-size: 1.5rem * $mult;
   }
-  &.xl {
+  &.font-size-xl {
     font-size: 2rem * $mult;
   }
-  &.xxl {
+  &.font-size-xxl {
     font-size: 3rem * $mult;
   }
 }
@@ -371,30 +442,41 @@ $default-height: 1rem * 4;
 $default-width: 1rem * 8;
 
 //Defaults for Elements
-$d-link-color: $dark-blue;
-$d-link-hover-color: $light-blue;
+$d-link-color: $d-color-blue;
+$d-link-hover-color: $d-color-blue-light;
+$d-link-padding: $d-padding-x $d-padding-y;
 $d-main-height: 99vh;
-$d-button-color: #fff;
-$d-button-background-color: blue;
-$d-button-hover-background-color: violet;
-$d-button-color-secondary: grey;
 $d-button-padding: $d-padding-x $d-padding-y;
+$d-button-color: #fff;
+$d-button-background-color: $d-color-blue;
+$d-button-hover-background-color: $d-color-blue-dark;
+$d-button-secondary-color: #444;
+$d-button-secondary-background-color: #ddd;
+$d-button-secondary-hover-background-color: #aaa;
 main {
   height: $d-main-height;
 }
-button {
+button,
+.btn {
   font-size: inherit;
   font-weight: bold;
+  border: 0;
+  padding: $d-button-padding;
   background-color: $d-button-background-color;
   color: $d-button-color;
-  padding: $d-button-padding;
   &:hover {
     background-color: $d-button-hover-background-color;
+  }
+  &.secondary {
+    background-color: $d-button-secondary-background-color;
+    color: $d-button-secondary-color;
+    &:hover {
+      background-color: $d-button-secondary-hover-background-color;
+    }
   }
 }
 
 // Inputs
-input,
 textarea,
 .select select {
   line-height: 1.5;
@@ -409,10 +491,15 @@ textarea,
   display: block;
   margin-bottom: 20px;
 }
-a {
+a,
+.link {
+  font-weight: normal;
+  padding: $d-link-padding;
+  background-color: transparent;
   text-decoration: none;
   color: $d-link-color;
   &:hover {
+    background-color: transparent;
     color: $d-link-hover-color;
   }
 }
@@ -450,7 +537,8 @@ li {
 }
 // Combined Styles begin here
 html {
-  @include debug-bps;
+  @include site-layout;
+  @include bps-debug;
   @include blockObjects;
   @include contentObjects {
     @include font-size;
