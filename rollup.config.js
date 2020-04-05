@@ -6,6 +6,7 @@ import livereload from 'rollup-plugin-livereload'
 import { terser } from 'rollup-plugin-terser'
 import alias from '@rollup/plugin-alias'
 import replace from '@rollup/plugin-replace'
+import strip from '@rollup/plugin-strip';
 import sveltePreprocess from 'svelte-preprocess'
 import sass from 'node-sass'
 
@@ -80,6 +81,7 @@ export default {
 				}
 			}*/
     }),
+    strip(),
 
     // If you have external dependencies installed from
     // npm, you'll most likely need these plugins. In
