@@ -6,9 +6,9 @@ import livereload from 'rollup-plugin-livereload'
 import { terser } from 'rollup-plugin-terser'
 import alias from '@rollup/plugin-alias'
 import replace from '@rollup/plugin-replace'
-import strip from '@rollup/plugin-strip';
+import strip from '@rollup/plugin-strip'
 import sveltePreprocess from 'svelte-preprocess'
-import sass from 'node-sass'
+// import sass from 'node-sass'
 
 const production = !process.env.ROLLUP_WATCH
 const productionSite = 'frontier.js'
@@ -26,12 +26,12 @@ export default {
     sourcemap: true,
     format: 'iife',
     name: 'app',
-    file: 'dist/build/bundle.js'
+    file: 'dist/build/bundle.js',
   },
   plugins: [
     replace({
       __AUTH_URL__: authUrl + '/login',
-      __API_URL__: apiUrl
+      __API_URL__: apiUrl,
     }),
     alias({
       entries: [
@@ -39,25 +39,25 @@ export default {
         { find: '$c', replacement: 'src/components' },
         { find: '$frontier', replacement: '@frontierjs/frontend' },
         { find: '$frontier-c', replacement: '@frontierjs/frontend/components' },
-        { find: '$router', replacement: '@sveltech/routify' }
-      ]
+        { find: '$router', replacement: '@sveltech/routify' },
+      ],
     }),
     svelte({
       // enable run-time checks when not in production
       dev: !production,
       // we'll extract any component CSS out into
       // a separate file — better for performance
-      css: css => {
+      css: (css) => {
         css.write('dist/build/bundle.css')
       },
       preprocess: sveltePreprocess({
         scss: {
-          includePaths: ['src']
+          includePaths: ['src'],
         },
         postcss: {
-          plugins: [require('autoprefixer')]
-        }
-      })
+          plugins: [require('autoprefixer')],
+        },
+      }),
       /*
 			preprocess: {
 				style: ({ content, attributes }) => {
@@ -90,8 +90,8 @@ export default {
     // https://github.com/rollup/rollup-plugin-commonjs
     resolve({
       browser: true,
-      dedupe: importee =>
-        importee === 'svelte' || importee.startsWith('svelte/')
+      dedupe: (importee) =>
+        importee === 'svelte' || importee.startsWith('svelte/'),
     }),
     commonjs(),
 
@@ -105,11 +105,11 @@ export default {
 
     // If we're building for production (npm run build
     // instead of npm run dev), minify
-    production && terser()
+    production && terser(),
   ],
   watch: {
-    clearScreen: false
-  }
+    clearScreen: false,
+  },
 }
 
 function serve() {
@@ -122,9 +122,9 @@ function serve() {
 
         require('child_process').spawn('npm', ['run', 'start', '--', '--dev'], {
           stdio: ['ignore', 'inherit', 'inherit'],
-          shell: true
+          shell: true,
         })
       }
-    }
+    },
   }
 }

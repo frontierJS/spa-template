@@ -36,22 +36,20 @@
   }
 </script>
 
-<div class="">
-  <div class="">
-    <div class="">
-      <form>
-        <Field
-          name="email"
-          type="email"
-          bind:value={form.email}
-          required="true" />
-        <Field
-          name="password"
-          type="password"
-          bind:value={form.password}
-          required="true" />
-        <button on:mouseenter={checkForm} on:click={login}>Sign In</button>
-      </form>
-    </div>
-  </div>
-</div>
+<section class="">
+  <article class="">
+    <form>
+      <Field
+        name="email"
+        type="email"
+        bind:value={form.email}
+        required="true" />
+      <Field
+        name="password"
+        type="password"
+        bind:value={form.password}
+        required="true" />
+      <button on:mouseenter={checkForm} on:click={login}>Sign In</button>
+    </form>
+  </article>
+</section>

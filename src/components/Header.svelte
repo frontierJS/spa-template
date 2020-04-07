@@ -5,23 +5,25 @@
   import { isActive, url, goto } from "$router";
 </script>
 
-<section class="">
+<header class="w-full">
   {#if $currentUser}
-    <header class="">
-      <article class="m">
-        <span class="stretch">
-          <span class="show-md">Logged in:</span>
-          {$currentUser.email}
-        </span>
-      </article>
-      <article class="row space-around">
-        <a class="lm" href={$url('/')}>Home</a>
-        <a class="lm" href={$url('/examples')}>Examples</a>
-      </article>
-    </header>
+    <article class="m row fx-stretch-all">
+      <span class="">
+        <span class="show-md">Logged in:</span>
+        {$currentUser.email}
+      </span>
+      <small class="cursor-pointer" on:click={() => $auth.logout()}>
+        Logout
+      </small>
+    </article>
+    <article class="row space-around">
+      <a class="lm" href={$url('/')}>Home</a>
+      <a class="lm" href={$url('/examples')}>Examples</a>
+    </article>
   {:else}
-    <header>
-      <h1>Header.svelte</h1>
-    </header>
+    <article class="stretch row">
+      <Brand />
+      <h1 class="grow py">Header.svelte</h1>
+    </article>
   {/if}
-</section>
+</header>
