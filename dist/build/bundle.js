@@ -2927,7 +2927,7 @@ var app = (function () {
     *
     * */
 
-    let apiToken = writable(localStorage.getItem('access') || false, () => () => console.log('logout broken'));
+    let apiToken = writable(localStorage.getItem('access') || false, () => () => void 0);
     let userStorage = localStorage.getItem('currentUser') || false;
     userStorage = JSON.parse(userStorage) || false;
 
@@ -2957,10 +2957,7 @@ var app = (function () {
 
         options = options ? {...options, ...defaultOpts} : defaultOpts;
         // console.log({options})
-
-        console.log('fetchData');
         let res = await fetch(fetchUrl, options);
-        console.log('fetched');
 
         if ([401,403,500].includes(res.status)) {
             logout();
@@ -2985,8 +2982,6 @@ var app = (function () {
         }
         // not sure if I will need to do this
         // params: method === 'GET' ? JSON.stringify(data) : '{}'
-
-        console.log('ajax');
         let res = await fetchData(url, opts);
         //console.log({res})
 
@@ -2999,8 +2994,6 @@ var app = (function () {
     };
 
     const post = function(url, data) {
-
-            console.log('post');
         if (! data) return alert('Save Function must submit data')
 
         return ajax(url, data, {
@@ -3056,10 +3049,7 @@ var app = (function () {
     });
     let login = async function({email, password}, destination = '/', cb) {
         try {
-
-            console.log('begin');
             let { accessToken = false, refreshToken = false, user = false} = await post(_env.authUrl, {email, password});
-            console.log('returned');
 
             apiToken.set(accessToken);
 
@@ -3069,13 +3059,9 @@ var app = (function () {
             currentUser.set(user);
             user = JSON.stringify(user) || false;
             localStorage.setItem('currentUser', user);
-            
-
-            console.log('done');
             if(accessToken) return cb ? cb(destination) : document.location = destination
 
         } catch (e) {
-            console.error(e);
         }
     };
 
@@ -3819,7 +3805,7 @@ var app = (function () {
     		c: function create() {
     			header = element("header");
     			h1 = element("h1");
-    			h1.textContent = "FrontierJS";
+    			h1.textContent = "Header.svelte";
     			add_location(h1, file$3, 23, 6, 645);
     			add_location(header, file$3, 22, 4, 630);
     		},
@@ -4457,12 +4443,6 @@ var app = (function () {
       } else if (typeof argument === 'number' || argStr === '[object Number]') {
         return new Date(argument);
       } else {
-        if ((typeof argument === 'string' || argStr === '[object String]') && typeof console !== 'undefined') {
-          // eslint-disable-next-line no-console
-          console.warn("Starting with v2.0.0-beta.1 date-fns doesn't accept strings as arguments. Please use `parseISO` to parse strings. See: https://git.io/fjule"); // eslint-disable-next-line no-console
-
-          console.warn(new Error().stack);
-        }
 
         return new Date(NaN);
       }
@@ -8572,14 +8552,14 @@ var app = (function () {
     			t1 = space();
     			button = element("button");
     			button.textContent = "Sign In";
-    			add_location(button, file$b, 41, 12, 1321);
-    			add_location(form_1, file$b, 38, 8, 1118);
+    			add_location(button, file$b, 52, 8, 1286);
+    			add_location(form_1, file$b, 41, 6, 1014);
     			attr_dev(div0, "class", "");
-    			add_location(div0, file$b, 37, 8, 1095);
-    			attr_dev(div1, "class", "o-container o-flex o-flex--center");
-    			add_location(div1, file$b, 36, 4, 1039);
-    			attr_dev(div2, "class", "o-container-vertical");
-    			add_location(div2, file$b, 35, 0, 1000);
+    			add_location(div0, file$b, 40, 4, 993);
+    			attr_dev(div1, "class", "");
+    			add_location(div1, file$b, 39, 2, 974);
+    			attr_dev(div2, "class", "");
+    			add_location(div2, file$b, 38, 0, 957);
     		},
     		l: function claim(nodes) {
     			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
