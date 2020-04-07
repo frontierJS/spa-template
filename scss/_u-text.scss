@@ -1,0 +1,97 @@
+.font-weight-100 {
+  font-weight: 100;
+}
+.font-weight-200 {
+  font-weight: 200;
+}
+.font-weight-300 {
+  font-weight: 300;
+}
+.font-weight-600 {
+  font-weight: 600;
+}
+
+@mixin font-size($mult: 1) {
+  &.font-size-xxs {
+    font-size: 0.5rem * $mult;
+  }
+  &.font-size-xs {
+    font-size: 0.75rem * $mult;
+  }
+  &.font-size-sm {
+    font-size: 0.875rem * $mult;
+  }
+  &.font-size-md {
+    font-size: 1rem * $mult;
+  }
+  &.font-size-lm {
+    font-size: 1.25rem * $mult;
+  }
+  &.font-size-lg {
+    font-size: 1.5rem * $mult;
+  }
+  &.font-size-xl {
+    font-size: 2rem * $mult;
+  }
+  &.font-size-xxl {
+    font-size: 3rem * $mult;
+  }
+}
+
+.line-h-1 {
+  line-height: 1;
+}
+.line-h {
+  line-height: $d-line-height;
+}
+.line-h-2 {
+  line-height: 2;
+}
+
+@mixin font-settings {
+  font-size: $d-font-size;
+  line-height: $d-line-height;
+  @include md {
+    font-size: 0.875rem;
+  }
+  @include lg {
+    font-size: 1rem;
+  }
+}
+@mixin text-align() {
+  &.align {
+    text-align: $d-text-align;
+  }
+  &.text-align-left {
+    text-align: left;
+  }
+  &.text-align-right {
+    text-align: right;
+  }
+  &.text-align-center {
+    text-align: center;
+  }
+}
+
+h1 {
+  font-size: $d-font-size * 3;
+  font-weight: 700;
+}
+h2 {
+  font-size: $d-font-size * 2;
+  font-weight: 700;
+}
+h3 {
+  font-size: $d-font-size * 1.5;
+  font-weight: 500;
+}
+
+@include textObjects {
+  display: inline-block;
+  line-height: $d-line-height;
+}
+
+@include contentObjects {
+  @include font-size;
+  @include text-align;
+}

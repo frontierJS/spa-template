@@ -1,19 +1,7 @@
 @use "sass:math";
-
-$unit: 1rem;
-$block: $unit * 8;
-
-$bl: $block;
-$sec: $block * 2;
-$xxs: $block * 3;
-$xs: $block * 4;
-$sm: $block * 5;
-$md: $block * 6;
-$lm: $block * 7;
-$lg: $block * 8;
-$xl: $block * 9;
-$xxl: $block * 10;
-$huge: $block * 20;
+// create a list of our sizes that can beused for looping
+// I guess it is just the keys of $bps
+// look up sass loops and getting map-keys
 
 $bps: (
   'bl': $bl,
@@ -26,7 +14,7 @@ $bps: (
   'lg': $lg,
   'xl': $xl,
   'xxl': $xxl,
-  'huge': $huge
+  'huge': $huge,
 );
 
 // Core Mixins
@@ -120,6 +108,7 @@ $bps: (
 }
 
 // Child Mixins
+//TODO: make the this a loop function
 @mixin bl($stop: huge) {
   @include bp(bl, $stop) {
     @content;
@@ -173,8 +162,6 @@ $bps: (
 
 @mixin bps-debug-utils($bp, $color) {
   $breakpoint: map-get($bps, $bp) / $block;
-  // $breakpoint: (map-get($bps, $bp) * 2);
-  // $breakpoint: 2 + 2;
   border: 3px solid $color;
   &::before {
     background-color: $color;
@@ -184,6 +171,8 @@ $bps: (
     grid-column: 1 / -1;
   }
 }
+
+//TODO: make the this a loop function
 @mixin bps-debug {
   .bps-debug {
     @media (max-width: 370px) {
@@ -218,42 +207,40 @@ $bps: (
   }
 }
 
-/* Example
-* You can use @include bp({start}, {stop})
-* or an single breakpoint @include sm({stop})
-
-
-.example {
-  @include bl(sec) {
-    
+@mixin site-layout {
+  .display-none {
+    display: none;
   }
-   @include xs(md) {
-    .item {
-      background-color: blue;
-    }
+  @include xxs {
   }
-  @include md(xl) {
-    .item {
-      background-color: green;
-    }
+  @include xs {
   }
-   @include xl {
-    .item {
-      background-color: red;
-    }
+  @include sm {
+  }
+  @include md {
+  }
+  @include lm {
+  }
+  @include lg {
+  }
+  @include xl {
+  }
+  @include xxl {
   }
 }
 
+/* Examples
+* You can use @include bp({start}, {stop})
+* or an single breakpoint @include sm({stop})
+
 @mixin site-layout() {
-  //DEFAULT
+  // DEFAULT
   display: flex;
   flex-flow: column;
   .links {
     display: none;
   }
 
-  // XXS
-  @include xxs { }
   // XS
   @include xs { }
 
@@ -288,44 +275,12 @@ $bps: (
     }
   }
 
-  // ML
-  @include ml { }
   // LG
   @include lg { }
-  // XL
-  @include xl { }
-  // XXL
-  @include xxl { }
-  
 }
 
 .app {
   height: 100%;
-  font-size: 22px;
-  @include template;
   @include site-layout;
 }
-
 */
-
-@mixin site-layout {
-  .display-none {
-    display: none;
-  }
-  @include xxs {
-  }
-  @include xs {
-  }
-  @include sm {
-  }
-  @include md {
-  }
-  @include lm {
-  }
-  @include lg {
-  }
-  @include xl {
-  }
-  @include xxl {
-  }
-}

@@ -7,31 +7,6 @@
             input
             label
    ========================================================================== */
-//TODO Move this later
-$d-label-color: #222;
-$d-label-font-size: 0.8rem;
-$d-input-font-size: 1rem;
-$d-input-color: #222;
-$d-input-placeholder-color: #222;
-$d-input-background-color: #fff;
-// $d-input-invalid-background-color: #a2b9fd1a;
-$d-input-invalid-background-color: #fff;
-$d-input-invalid-required-background-color: #cf13131a;
-$d-input-box-shadow: 0 1px 3px hsla(0, 0%, 0%, 0.2);
-$d-button-invalid-color: #777;
-$d-button-invalid-background-color: #eee;
-
-@mixin box-shadow {
-  -moz-box-shadow: 3px 3px 4px #000;
-  -webkit-box-shadow: 3px 3px 4px #000;
-  box-shadow: 3px 3px 4px #000;
-}
-@mixin transition($attr, $duration, $timing) {
-  -webkit-transition: $attr $duration $timing;
-  -moz-transition: $attr $duration $timing;
-  -o-transition: $attr $duration $timing;
-  transition: $attr $duration $timing;
-}
 
 form {
   &:invalid button {
@@ -143,4 +118,20 @@ select.invalid:invalid,
 input.invalid:invalid {
   background-color: $d-input-invalid-required-background-color;
   transition: all, 6s, ease-out;
+}
+
+// Inputs
+textarea,
+.select select {
+  line-height: 1.5;
+  margin: 0;
+  //height: 2.1em;
+  padding: 0.3em 0.6em;
+  border: 1px solid #ccc;
+  background-color: #fff;
+  border-radius: 0.2em;
+  transition: all 0.3s;
+  //width: 100%;
+  display: block;
+  margin-bottom: 20px;
 }

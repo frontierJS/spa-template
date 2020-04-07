@@ -1,0 +1,24 @@
+%button {
+  font-size: inherit;
+  font-weight: bold;
+  border: 0;
+  padding: $d-button-padding;
+  background-color: $d-button-background-color;
+  color: $d-button-color;
+  &:hover {
+    background-color: $d-button-hover-background-color;
+  }
+  &.secondary {
+    background-color: $d-button-secondary-background-color;
+    color: $d-button-secondary-color;
+    &:hover {
+      background-color: $d-button-secondary-hover-background-color;
+    }
+  }
+}
+
+button,
+.btn,
+[type='submit'] {
+  @extend %button;
+}

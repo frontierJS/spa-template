@@ -1,0 +1,58 @@
+/* ==========================================================================
+  Settings: Colors
+  Only define colors here. Don't use sass color functions, stick to hex values,
+  or the color component in styleguide won't regenerate automatically anymore.
+ ========================================================================== */
+
+/* Black and White
+========================================================================== */
+$pure-black: #000;
+$black: #111;
+$off-black: #222222;
+
+$pure-white: #fff;
+$white: #fcfcfc;
+$off-white: #efefef;
+
+/* Grays
+========================================================================== */
+$gray-100: #f7fafc;
+$gray-200: #edf2f7;
+$gray-300: #e2e8f0;
+$gray-400: #cbd5e0;
+$gray-500: #a0aec0;
+$gray-600: #718096;
+$gray-700: #4a5568;
+$gray-800: #2d3748;
+$gray-900: #1a202c;
+
+/* Colors
+========================================================================== */
+
+//Red
+$red: #e3342f;
+
+//Orange
+$orange: #f6993f;
+
+//Blue
+$light-blue: #47a3f3;
+$blue: #2186eb;
+$dark-blue: #0967d2;
+
+//Yellow
+$yellow: #ffed4a;
+
+//Green
+$dark-green: #94b93a;
+$green: #38c172;
+$light-green: #a3cc3e;
+
+//Purple
+$indigo: #6574cd;
+$purple: #9561e2;
+$pink: #f66d9b;
+
+//Other
+$teal: #4dc0b5;
+$cyan: #6cb2eb;
