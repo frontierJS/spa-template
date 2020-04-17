@@ -37,19 +37,21 @@
 </script>
 
 <section class="">
-  <article class="">
-    <form>
-      <Field
-        name="email"
-        type="email"
-        bind:value={form.email}
-        required="true" />
-      <Field
-        name="password"
-        type="password"
-        bind:value={form.password}
-        required="true" />
-      <button on:mouseenter={checkForm} on:click={login}>Sign In</button>
-    </form>
-  </article>
+  <form class="box bg -p">
+    <Field
+      classes=""
+      name="email"
+      type="email"
+      bind:value={form.email}
+      required="true" />
+    <Field
+      classes=""
+      name="password"
+      type="password"
+      bind:value={form.password}
+      required="true" />
+    <button class="el -l" on:mouseenter={checkForm} on:click={login}>
+      Enter
+    </button>
+  </form>
 </section>

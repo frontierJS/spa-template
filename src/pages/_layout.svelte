@@ -13,7 +13,7 @@
   // Handling Auth
 </script>
 
-<main class="flex debug flex-start">
+<main class="">
   <Header />
   <slot />
   <Footer />

@@ -6,7 +6,7 @@
     "dev": "run-p watch:*",
     "watch:rollup": "rollup -c -w",
     "watch:routify": "routify",
-    "watch:css": "node-sass --watch --recursive --output dist --source-map true --source-map-contents scss",
+    "watch:css": "node-sass --watch --recursive --output dist --source-map true --source-map-contents ../styles",
     "build": "rollup -c --environment INCLUDE_DEPS,BUILD:production",
     "start": "sirv dist --single",
     "transfer:up": "run-s build deploy:hot",

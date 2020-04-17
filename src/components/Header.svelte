@@ -5,21 +5,27 @@
   import { isActive, url, goto } from "$router";
 </script>
 
-<header class="w-full">
+<header class="">
   {#if $currentUser}
-    <article class="m row fx-stretch-all">
+    <div class="grid columns -p">
       <span class="">
-        <span class="show-md">Logged in:</span>
+        <span class="-dn -d@md">Logged in:</span>
         {$currentUser.email}
       </span>
-      <small class="cursor-pointer" on:click={() => $auth.logout()}>
-        Logout
-      </small>
-    </article>
-    <article class="row space-around">
-      <a class="lm" href={$url('/')}>Home</a>
-      <a class="lm" href={$url('/examples')}>Examples</a>
-    </article>
+      <div class="_r">
+        <small class="cursor-pointer" on:click={() => $auth.logout()}>
+          Logout
+        </small>
+        <small class="cursor-pointer" on:click={() => $auth.logout()}>
+          More
+        </small>
+      </div>
+    </div>
+    <nav class="">
+      <a class="" href={$url('/')}>Home</a>
+      <a class="" href={$url('/examples')}>Examples</a>
+      <a class="" href={$url('/styles')}>Style Guide</a>
+    </nav>
   {:else}
     <article class="stretch row">
       <Brand />
