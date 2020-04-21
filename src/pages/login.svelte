@@ -36,8 +36,8 @@
   }
 </script>
 
-<section class="">
-  <form class="box bg -p">
+<section debug class="bps-debug box _x">
+  <form class="">
     <Field
       classes=""
       name="email"

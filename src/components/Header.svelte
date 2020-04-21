@@ -7,24 +7,21 @@
 
 <header class="">
   {#if $currentUser}
-    <div class="grid columns -p">
+    <div class="grid columns _y p">
       <span class="">
-        <span class="-dn -d@md">Logged in:</span>
+        <span class="dn d@md">Logged in:</span>
         {$currentUser.email}
       </span>
-      <div class="_r">
-        <small class="cursor-pointer" on:click={() => $auth.logout()}>
-          Logout
-        </small>
-        <small class="cursor-pointer" on:click={() => $auth.logout()}>
-          More
-        </small>
+      <div class="-r v-">
+        <button class="link" on:click={() => $auth.logout()}>Logout</button>
+        <button class="link" on:click={() => $auth.logout()}>More</button>
       </div>
     </div>
     <nav class="">
       <a class="" href={$url('/')}>Home</a>
       <a class="" href={$url('/examples')}>Examples</a>
       <a class="" href={$url('/styles')}>Style Guide</a>
+      <a class="" href={$url('/responsive')}>Responsive</a>
     </nav>
   {:else}
     <article class="stretch row">

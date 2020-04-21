@@ -11,9 +11,6 @@
   // move validation to some higher function so that mount becomes
   onMount(() => {
     getUsers();
-    fontSize = getComputedStyle(document.documentElement).getPropertyValue(
-      "--font-size-jordan"
-    );
   });
 
   let getUsers = async function(withDeleted = "") {

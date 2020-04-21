@@ -37,19 +37,6 @@
       Sign Up
     </button>
   </form>
-  <form class="=el" style="">
-    <Field classes="" name="name" value={name} />
-    <Field classes="" name="email" type="email" value={email} />
-    <Field name="password" type="password" value={password} />
-    <Field label="Numberfield" type="number" name="number" value={number} />
-    <Field name="last_name" value={lastName} />
-    <button
-      class=""
-      on:mouseenter={checkForm}
-      on:click={() => alert('Good Test')}>
-      Sign Up
-    </button>
-  </form>
 </div>
 <br />
 <br />
