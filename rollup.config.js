@@ -1,4 +1,3 @@
-import * as path from 'path'
 import svelte from 'rollup-plugin-svelte'
 import resolve from '@rollup/plugin-node-resolve'
 import commonjs from 'rollup-plugin-commonjs'
@@ -8,7 +7,6 @@ import alias from '@rollup/plugin-alias'
 import replace from '@rollup/plugin-replace'
 import strip from '@rollup/plugin-strip'
 import sveltePreprocess from 'svelte-preprocess'
-// import sass from 'node-sass'
 
 const production = !process.env.ROLLUP_WATCH
 const productionSite = 'frontier.js'
@@ -58,28 +56,6 @@ export default {
           plugins: [require('autoprefixer')],
         },
       }),
-      /*
-			preprocess: {
-				style: ({ content, attributes }) => {
-					if (attributes.type !== 'text/scss') return;
-
-					return new Promise((fulfil, reject) => {
-						sass.render({
-							data: content,
-							includePaths: ['src'],
-							sourceMap: true,
-							outFile: 'x' // this is necessary, but is ignored
-						}, (err, result) => {
-							if (err) return reject(err);
-
-							fulfil({
-								code: result.css.toString(),
-								map: result.map.toString()
-							});
-						});
-					});
-				}
-			}*/
     }),
     strip(),
 

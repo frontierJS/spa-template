@@ -492,4 +492,22 @@
       </div>
     </div>
   </div>
+  <div class="br w_ ">W_</div>
+    <div class="br w-- ">W--</div>
+    <div class="br w- ">W-</div>
+    <div class="br w block x ">
+      W
+      <div>
+        <button>Save All</button>
+      </div>
+    </div>
+    <div class="br w+ ">W+</div>
+    <div class="br w++ ">W++</div>
+    <div class="br w* ">W*</div>
+    <div class="br w** block x">
+      W**
+      <div>
+        <button>Save All</button>
+      </div>
+    </div>
 </section>
