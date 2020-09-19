@@ -6,12 +6,19 @@ import { terser } from 'rollup-plugin-terser'
 import alias from '@rollup/plugin-alias'
 import replace from '@rollup/plugin-replace'
 import strip from '@rollup/plugin-strip'
+import copy from 'rollup-plugin-copy'
 import sveltePreprocess from 'svelte-preprocess'
+import Toolbelt from '@frontierjs/toolbelt/dist/build.cjs'
+// import Toolbelt from '@frontierjs/build.js'
+
+console.log({ env: Toolbelt.env.get })
+let port2 = Toolbelt.env.get('PORT', 3200)
 
 const production = !process.env.ROLLUP_WATCH
 const productionSite = 'frontier.js'
 const port = 3000
 
+console.log({ port, port2 })
 let apiUrl = production
   ? `https://${productionSite}/api/v1`
   : `http://localhost:${port}/api/v1`
@@ -24,7 +31,7 @@ export default {
     sourcemap: true,
     format: 'iife',
     name: 'app',
-    file: 'dist/build/bundle.js',
+    file: 'dist/bundle/build.js',
   },
   plugins: [
     replace({
@@ -40,13 +47,20 @@ export default {
         { find: '$router', replacement: '@sveltech/routify' },
       ],
     }),
+    copy({
+      targets: [
+        { src: 'src/index.html', dest: 'dist' },
+        { src: 'src/static/*', dest: 'dist' },
+        { src: 'src/images', dest: 'dist' },
+      ],
+    }),
     svelte({
       // enable run-time checks when not in production
       dev: !production,
       // we'll extract any component CSS out into
       // a separate file — better for performance
       css: (css) => {
-        css.write('dist/build/bundle.css')
+        css.write('dist/bundle/build.css')
       },
       preprocess: sveltePreprocess({
         scss: {
